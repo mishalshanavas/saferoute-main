@@ -6,10 +6,11 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run java\"",
+    "dev-no-java": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm run dev",
     "client": "cd frontend && npm start", 
     "java": "cd java-services/routing-service && mvn spring-boot:run",
-    "install-all": "npm install && cd backend && npm install && cd frontend && npm install",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ..",
     "build": "next build",
     "dev-old": "next dev",
     "lint": "next lint",
