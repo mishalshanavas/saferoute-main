@@ -1,0 +1,73 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "High Traffic Area - MG Road",
+        "risk_level": "high"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [76.2673, 9.9312],
+          [76.2773, 9.9312],
+          [76.2773, 9.9412],
+          [76.2673, 9.9412],
+          [76.2673, 9.9312]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Construction Zone - Kaloor",
+        "risk_level": "medium"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [76.2903, 9.9588],
+          [76.3003, 9.9588],
+          [76.3003, 9.9688],
+          [76.2903, 9.9688],
+          [76.2903, 9.9588]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Accident Prone Area - Vytilla Junction",
+        "risk_level": "high"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [76.3124, 9.9651],
+          [76.3224, 9.9651],
+          [76.3224, 9.9751],
+          [76.3124, 9.9751],
+          [76.3124, 9.9651]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Monsoon Flood Risk Zone - Kadavanthra",
+        "risk_level": "medium"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [76.2999, 9.9816],
+          [76.3099, 9.9816],
+          [76.3099, 9.9916],
+          [76.2999, 9.9916],
+          [76.2999, 9.9816]
+        ]]
+      }
+    }
+  ]
+}
