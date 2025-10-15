@@ -1,13 +1,26 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
+  "name": "saferoute-mern-java",
+  "version": "1.0.0",
+  "description": "SafeRoute - MERN Stack with Java Microservices for Advanced Routing",
+  "main": "index.js",
   "private": true,
   "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run java\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start", 
+    "java": "cd java-services/routing-service && mvn spring-boot:run",
+    "install-all": "npm install && cd backend && npm install && cd frontend && npm install",
     "build": "next build",
-    "dev": "next dev",
+    "dev-old": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "build-java": "cd java-services/routing-service && mvn clean package",
+    "test": "cd backend && npm test",
+    "test-java": "cd java-services/routing-service && mvn test"
   },
+  "keywords": ["routing", "safety", "mern", "java", "microservices", "geospatial"],
+  "author": "SafeRoute Team",
+  "license": "MIT",
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
@@ -63,11 +76,16 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^22",
+    "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "postcss": "^8.5",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5"
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5",
+    "concurrently": "^8.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
