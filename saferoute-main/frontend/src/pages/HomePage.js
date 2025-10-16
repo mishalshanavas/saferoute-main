@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleBypassAuth } from '../store/slices/authSlice';
 
 const HomePage = () => {
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { isAuthenticated, bypassAuth } = useSelector((state) => state.auth);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -20,8 +22,20 @@ const HomePage = () => {
             community-driven insights, and intelligent route optimization powered by AI.
           </p>
           
+          {/* Demo Mode Banner */}
+          {bypassAuth && (
+            <div className="mb-6 bg-orange-100 border border-orange-300 text-orange-800 px-4 py-3 rounded-lg max-w-2xl mx-auto">
+              <div className="flex items-center justify-center">
+                <svg className="h-5 w-5 text-orange-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">Demo Mode: Authentication bypassed - all features accessible</span>
+              </div>
+            </div>
+          )}
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {isAuthenticated ? (
+            {(isAuthenticated || bypassAuth) ? (
               <Link 
                 to="/dashboard" 
                 className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
@@ -107,6 +121,26 @@ const HomePage = () => {
             </div>
           </div>
         </div>
+        
+        {/* Developer Controls - Only visible in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-12 bg-gray-100 border border-gray-300 rounded-lg p-4 max-w-md mx-auto">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Developer Controls</h3>
+            <button
+              onClick={() => dispatch(toggleBypassAuth())}
+              className={`w-full px-3 py-2 rounded text-sm font-medium transition-colors ${
+                bypassAuth
+                  ? 'bg-red-100 text-red-700 border border-red-300 hover:bg-red-200'
+                  : 'bg-green-100 text-green-700 border border-green-300 hover:bg-green-200'
+              }`}
+            >
+              {bypassAuth ? 'Disable Auth Bypass' : 'Enable Auth Bypass'}
+            </button>
+            <p className="text-xs text-gray-600 mt-2">
+              Current: {bypassAuth ? 'Authentication bypassed' : 'Normal authentication'}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useSelector((state) => state.auth);
+  const { isAuthenticated, isLoading, bypassAuth } = useSelector((state) => state.auth);
   const location = useLocation();
 
   if (isLoading) {
@@ -13,6 +13,11 @@ const ProtectedRoute = ({ children }) => {
         <LoadingSpinner size="lg" />
       </div>
     );
+  }
+
+  // If bypass mode is enabled, allow access regardless of authentication status
+  if (bypassAuth) {
+    return children;
   }
 
   if (!isAuthenticated) {

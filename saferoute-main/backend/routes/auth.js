@@ -142,6 +142,28 @@ router.post('/login', [
 // @access  Private
 router.get('/me', auth, async (req, res) => {
   try {
+    // Handle demo user case
+    if (req.user.id === 'demo-user') {
+      return res.json({
+        success: true,
+        user: {
+          id: 'demo-user',
+          name: 'Demo User',
+          email: 'demo@saferoute.com',
+          role: 'user',
+          preferences: {
+            avoidHighways: false,
+            avoidTolls: false,
+            preferSafeRoutes: true,
+            routingEngine: 'osrm'
+          },
+          savedLocations: [],
+          lastLogin: new Date(),
+          createdAt: new Date()
+        }
+      });
+    }
+
     const user = await User.findById(req.user.id);
     
     if (!user) {

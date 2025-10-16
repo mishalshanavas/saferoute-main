@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
-import { loadUser } from './store/slices/authSlice';
+import { loadUser, autoLogin } from './store/slices/authSlice';
 
 // Components
 import Navbar from './components/layout/Navbar';
@@ -24,15 +24,21 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   const dispatch = useDispatch();
-  const { isLoading, isAuthenticated } = useSelector((state) => state.auth);
+  const { isLoading, isAuthenticated, bypassAuth } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Load user on app initialization if token exists
-    const token = localStorage.getItem('token');
-    if (token) {
-      dispatch(loadUser());
+    // Check if bypass authentication is enabled
+    if (bypassAuth) {
+      // Automatically log in with demo user
+      dispatch(autoLogin());
+    } else {
+      // Normal authentication flow - load user if token exists
+      const token = localStorage.getItem('token');
+      if (token && token !== 'demo-token') {
+        dispatch(loadUser());
+      }
     }
-  }, [dispatch]);
+  }, [dispatch, bypassAuth]);
 
   if (isLoading) {
     return (

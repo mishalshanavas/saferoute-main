@@ -194,10 +194,40 @@ npm run install-all    # Install all dependencies (root, backend, frontend)
 ### Development
 ```bash
 npm run dev            # Start all services concurrently
+npm run dev-no-java    # Start MERN stack only (no Java service)
 npm run server         # Start only Express.js backend
 npm run client         # Start only React frontend  
 npm run java           # Start only Java microservice
 ```
+
+## 🔓 Authentication Bypass (Demo Mode)
+
+For development and demonstration purposes, authentication can be bypassed to allow immediate access to all features without requiring user registration or login.
+
+### Features
+- **Automatic Login**: Users are automatically logged in as "Demo User"
+- **Full Feature Access**: All protected routes and features are accessible
+- **Original Code Preserved**: Login/signup functionality remains intact for future use
+- **Easy Toggle**: Can be enabled/disabled during development
+
+### Usage
+1. **Automatic**: Auth bypass is enabled by default in development mode
+2. **Manual Toggle**: Use the developer controls on the homepage (development builds only)
+3. **Code Toggle**: Modify `bypassAuth: true` in `frontend/src/store/slices/authSlice.js`
+
+### Demo User Details
+- **Name**: Demo User
+- **Email**: demo@saferoute.com
+- **ID**: demo-user
+- **Access**: All features and protected routes
+
+### Re-enabling Authentication
+To restore normal authentication flow:
+1. Set `bypassAuth: false` in the auth slice
+2. Or use the toggle button on homepage (development mode)
+3. Clear localStorage and refresh the application
+
+> **Note**: This feature is intended for development and demo purposes only. Disable in production environments.
 
 ### Building
 ```bash

@@ -10,6 +10,16 @@ module.exports = async (req, res, next) => {
     return res.status(401).json({ message: 'No token, authorization denied' });
   }
 
+  // Handle demo token (bypass authentication for development/demo purposes)
+  if (token === 'demo-token') {
+    req.user = {
+      id: 'demo-user',
+      name: 'Demo User',
+      email: 'demo@saferoute.com'
+    };
+    return next();
+  }
+
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

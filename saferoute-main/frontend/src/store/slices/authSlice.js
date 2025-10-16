@@ -66,18 +66,56 @@ const initialState = {
   isLoading: false,
   isAuthenticated: false,
   error: null,
+  // Temporary bypass flag - set to true to skip authentication
+  bypassAuth: true,
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    // Temporary auto-login for development/demo purposes
+    autoLogin: (state) => {
+      if (state.bypassAuth) {
+        state.isAuthenticated = true;
+        state.user = {
+          id: 'demo-user',
+          name: 'Demo User',
+          email: 'demo@saferoute.com',
+          preferences: {
+            avoidHighways: false,
+            avoidTolls: false,
+            preferSafeRoutes: true,
+            routingEngine: 'osrm'
+          }
+        };
+        state.token = 'demo-token';
+        state.error = null;
+        // Store demo token for consistency
+        localStorage.setItem('token', 'demo-token');
+      }
+    },
     logout: (state) => {
-      localStorage.removeItem('token');
-      state.user = null;
-      state.token = null;
-      state.isAuthenticated = false;
-      state.error = null;
+      if (!state.bypassAuth) {
+        localStorage.removeItem('token');
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      } else {
+        // In bypass mode, just reset to demo user
+        state.user = {
+          id: 'demo-user',
+          name: 'Demo User',
+          email: 'demo@saferoute.com',
+          preferences: {
+            avoidHighways: false,
+            avoidTolls: false,
+            preferSafeRoutes: true,
+            routingEngine: 'osrm'
+          }
+        };
+      }
     },
     clearError: (state) => {
       state.error = null;
@@ -85,6 +123,18 @@ const authSlice = createSlice({
     updatePreferences: (state, action) => {
       if (state.user) {
         state.user.preferences = { ...state.user.preferences, ...action.payload };
+      }
+    },
+    // Toggle bypass mode (for development)
+    toggleBypassAuth: (state) => {
+      state.bypassAuth = !state.bypassAuth;
+      if (!state.bypassAuth) {
+        // If disabling bypass, reset auth state
+        localStorage.removeItem('token');
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
       }
     },
   },
@@ -165,5 +215,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, updatePreferences } = authSlice.actions;
+export const { logout, clearError, updatePreferences, autoLogin, toggleBypassAuth } = authSlice.actions;
 export default authSlice.reducer;
