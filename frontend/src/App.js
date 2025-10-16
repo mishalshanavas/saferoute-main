@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import { loadUser, autoLogin } from './store/slices/authSlice';
@@ -24,7 +24,11 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { isLoading, isAuthenticated, bypassAuth } = useSelector((state) => state.auth);
+  
+  // Check if current route is the homepage
+  const isHomePage = location.pathname === '/';
 
   useEffect(() => {
     // Check if bypass authentication is enabled
@@ -50,7 +54,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
+      {/* Only show Navbar if not on homepage */}
+      {!isHomePage && <Navbar />}
       
       <main className="flex-1">
         <Routes>
@@ -99,7 +104,8 @@ function App() {
         </Routes>
       </main>
 
-      <Footer />
+      {/* Only show Footer if not on homepage */}
+      {!isHomePage && <Footer />}
       
       {/* Toast Notifications */}
       <Toaster
