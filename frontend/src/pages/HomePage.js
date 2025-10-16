@@ -68,16 +68,7 @@ const HomePage = () => {
       </div>
 
       {/* Pixel Trail Effect */}
-      <div className="fixed inset-0 z-1" style={{ height: '100vh', position: 'fixed', overflow: 'hidden'}}>
-        <PixelTrail
-          gridSize={50}
-          trailSize={0.1}
-          maxAge={250}
-          interpolate={5}
-          color="#fff"
-          gooeyFilter={{ id: "custom-goo-filter", strength: 2 }}
-        />
-      </div>
+      <PixelTrail />
       
       <div className="min-h-screen relative z-10" ref={containerRef}>
         <main className="pt-32">

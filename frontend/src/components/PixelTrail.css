@@ -1,10 +1,86 @@
-.goo-filter-container {
-  position: absolute;
+.pixel-trail-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
   overflow: hidden;
-  z-index: 1;
 }
 
-.pixel-canvas {
-  position: absolute;
-  z-index: 1;
+.custom-cursor {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: rgba(0, 255, 255, 0.8);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  transition: opacity 0.3s ease;
+  box-shadow: 
+    0 0 10px rgba(0, 255, 255, 0.5),
+    0 0 20px rgba(0, 255, 255, 0.3),
+    0 0 30px rgba(0, 255, 255, 0.1);
+  mix-blend-mode: screen;
+}
+
+.pixel-dot {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  background: linear-gradient(45deg, 
+    rgba(0, 255, 255, 0.8), 
+    rgba(255, 0, 255, 0.6),
+    rgba(255, 255, 0, 0.4)
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pixelTrail 1s ease-out forwards;
+  box-shadow: 
+    0 0 8px rgba(0, 255, 255, 0.4),
+    0 0 15px rgba(255, 0, 255, 0.3);
+  mix-blend-mode: screen;
+}
+
+@keyframes pixelTrail {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1.5) saturate(1.2);
+  }
+  
+  25% {
+    opacity: 0.8;
+    transform: scale(1.2) rotate(90deg);
+    filter: brightness(1.3) saturate(1.1);
+  }
+  
+  50% {
+    opacity: 0.6;
+    transform: scale(0.8) rotate(180deg);
+    filter: brightness(1.1) saturate(1);
+  }
+  
+  75% {
+    opacity: 0.3;
+    transform: scale(0.5) rotate(270deg);
+    filter: brightness(0.9) saturate(0.8);
+  }
+  
+  100% {
+    opacity: 0;
+    transform: scale(0.2) rotate(360deg);
+    filter: brightness(0.5) saturate(0.5);
+  }
+}
+
+/* Enhanced cursor for interactive elements */
+.custom-cursor.interactive {
+  transform: scale(1.5);
+  background: rgba(255, 0, 255, 0.9);
+  box-shadow: 
+    0 0 15px rgba(255, 0, 255, 0.6),
+    0 0 25px rgba(255, 0, 255, 0.4),
+    0 0 35px rgba(255, 0, 255, 0.2);
 }
