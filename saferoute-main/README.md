@@ -64,6 +64,8 @@ A comprehensive **MERN (MongoDB, Express.js, React, Node.js) + Java** applicatio
    npm run install-all
    ```
 
+   > **Note**: The project has been cleaned of all unused Next.js dependencies and files. Only the MERN+Java architecture remains.
+
 2. **Set up Environment Variables**
    ```bash
    cp .env.example .env
