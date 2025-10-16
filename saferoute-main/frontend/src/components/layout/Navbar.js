@@ -2,11 +2,12 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
+import { User } from 'lucide-react';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { isAuthenticated, user, bypassAuth } = useSelector((state) => state.auth);
+  const { isAuthenticated, bypassAuth } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -14,78 +15,72 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4">
+    <nav className="bg-white border-b border-gray-200">
+      <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">SR</span>
-            </div>
-            <span className="text-xl font-bold text-gray-800">SafeRoute</span>
+          <Link to="/" className="flex items-center">
+            <span className="text-xl font-light text-gray-900">SafeRoute</span>
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-8">
             {/* Show authenticated navigation when authenticated OR in bypass mode */}
             {(isAuthenticated || bypassAuth) ? (
               <>
-                <Link to="/dashboard" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <Link to="/dashboard" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
                   Dashboard
                 </Link>
-                <Link to="/history" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <Link to="/history" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
                   History
                 </Link>
-                <Link to="/saved-routes" className="text-gray-600 hover:text-blue-600 transition-colors">
-                  Saved Routes
+                <Link to="/saved-routes" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Saved
                 </Link>
                 
                 {/* User Menu */}
                 <div className="relative group">
-                  <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium">
-                        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </span>
+                  <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+                    <div className="w-6 h-6 border border-gray-300 flex items-center justify-center">
+                      <User className="w-3 h-3" />
                     </div>
-                    <span>{user?.name || 'User'}</span>
                     {bypassAuth && (
-                      <span className="ml-1 text-xs text-orange-600 font-medium">(Demo)</span>
+                      <span className="text-xs text-gray-400">Demo</span>
                     )}
                   </button>
                   
                   {/* Dropdown Menu */}
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                     {bypassAuth && (
-                      <div className="px-4 py-2 text-xs text-orange-600 border-b border-gray-200">
-                        Demo Mode - Authentication Bypassed
+                      <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-200">
+                        Demo Mode
                       </div>
                     )}
                     <Link 
                       to="/profile" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      Profile Settings
+                      Profile
                     </Link>
                     <button 
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      {bypassAuth ? 'Reset Demo' : 'Sign Out'}
+                      {bypassAuth ? 'Reset' : 'Sign Out'}
                     </button>
                   </div>
                 </div>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors">
-                  Login
+                <Link to="/login" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Sign In
                 </Link>
                 <Link 
                   to="/register" 
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-gray-900 text-white px-4 py-2 text-sm hover:bg-gray-800 transition-colors"
                 >
-                  Sign Up
+                  Get Started
                 </Link>
               </>
             )}
