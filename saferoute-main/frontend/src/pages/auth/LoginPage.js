@@ -103,9 +103,9 @@ const LoginPage = () => {
                 <span className="ml-2 text-gray-600">Remember me</span>
               </label>
 
-              <a href="#" className="text-gray-900 hover:underline">
+              <button type="button" className="text-gray-900 hover:underline">
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             <button
