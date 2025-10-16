@@ -2,11 +2,12 @@ import React from 'react';
 
 const RouteHistoryPage = () => {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Route History</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Route history will be displayed here...</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-8">Route History</h1>
+        <div className="bg-white border border-gray-200 p-12 text-center">
+          <p className="text-gray-500 text-sm">No routes calculated yet</p>
+          <p className="text-gray-400 text-xs mt-2">Your route history will appear here</p>
         </div>
       </div>
     </div>
