@@ -2,6 +2,9 @@
 
 # dependencies
 /node_modules
+**/node_modules
+frontend/node_modules
+backend/node_modules
 
 # next.js
 /.next/
@@ -9,6 +12,8 @@
 
 # production
 /build
+**/build
+frontend/build
 
 # debug
 npm-debug.log*
@@ -25,4 +30,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
