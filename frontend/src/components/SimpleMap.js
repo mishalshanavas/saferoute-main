@@ -73,9 +73,15 @@ const SimpleMap = ({
   const updateOverlayMarkers = () => {
     if (!mapInstanceRef.current || !overlayDataRef.current) return;
 
-    // Clear existing overlay markers
+    // Clear existing overlay markers with proper null checks
     overlayMarkersRef.current.forEach(marker => {
-      mapInstanceRef.current.removeLayer(marker);
+      if (marker && mapInstanceRef.current && mapInstanceRef.current.hasLayer(marker)) {
+        try {
+          mapInstanceRef.current.removeLayer(marker);
+        } catch (error) {
+          console.warn('Error removing overlay marker:', error);
+        }
+      }
     });
     overlayMarkersRef.current = [];
 
@@ -152,8 +158,51 @@ const SimpleMap = ({
     });
 
     return () => {
+      // Clean up overlay markers
+      if (overlayMarkersRef.current && mapInstanceRef.current) {
+        overlayMarkersRef.current.forEach(marker => {
+          if (marker && mapInstanceRef.current.hasLayer(marker)) {
+            try {
+              mapInstanceRef.current.removeLayer(marker);
+            } catch (error) {
+              console.warn('Error removing overlay marker during cleanup:', error);
+            }
+          }
+        });
+        overlayMarkersRef.current = [];
+      }
+
+      // Clean up route markers
+      if (markersRef.current && mapInstanceRef.current) {
+        markersRef.current.forEach(marker => {
+          if (marker && mapInstanceRef.current.hasLayer(marker)) {
+            try {
+              mapInstanceRef.current.removeLayer(marker);
+            } catch (error) {
+              console.warn('Error removing route marker during cleanup:', error);
+            }
+          }
+        });
+        markersRef.current = [];
+      }
+
+      // Clean up route layer
+      if (routeLayerRef.current && mapInstanceRef.current && mapInstanceRef.current.hasLayer(routeLayerRef.current)) {
+        try {
+          mapInstanceRef.current.removeLayer(routeLayerRef.current);
+        } catch (error) {
+          console.warn('Error removing route layer during cleanup:', error);
+        }
+        routeLayerRef.current = null;
+      }
+
+      // Remove the map instance
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        try {
+          mapInstanceRef.current.remove();
+        } catch (error) {
+          console.warn('Error removing map instance:', error);
+        }
         mapInstanceRef.current = null;
       }
     };
@@ -170,9 +219,15 @@ const SimpleMap = ({
 
     console.log('Updating markers with coords:', { startCoords, endCoords });
 
-    // Clear existing route markers
+    // Clear existing route markers with proper null checks
     markersRef.current.forEach(marker => {
-      mapInstanceRef.current.removeLayer(marker);
+      if (marker && mapInstanceRef.current && mapInstanceRef.current.hasLayer(marker)) {
+        try {
+          mapInstanceRef.current.removeLayer(marker);
+        } catch (error) {
+          console.warn('Error removing route marker:', error);
+        }
+      }
     });
     markersRef.current = [];
 
@@ -216,9 +271,13 @@ const SimpleMap = ({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
-    // Remove existing route
-    if (routeLayerRef.current) {
-      mapInstanceRef.current.removeLayer(routeLayerRef.current);
+    // Remove existing route with proper null checks
+    if (routeLayerRef.current && mapInstanceRef.current && mapInstanceRef.current.hasLayer(routeLayerRef.current)) {
+      try {
+        mapInstanceRef.current.removeLayer(routeLayerRef.current);
+      } catch (error) {
+        console.warn('Error removing route layer:', error);
+      }
       routeLayerRef.current = null;
     }
 
