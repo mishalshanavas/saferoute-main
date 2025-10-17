@@ -12,7 +12,7 @@
     "routing": "cd routing-service && npm run dev",
     "java": "cd java-services/routing-service && mvn spring-boot:run",
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../routing-service && npm install && cd ..",
-    "build": "cd frontend && npm run build",
+    "build": "cd frontend && npm install && npm run build",
     "build-java": "cd java-services/routing-service && mvn clean package",
     "test": "cd backend && npm test",
     "test-java": "cd java-services/routing-service && mvn test",

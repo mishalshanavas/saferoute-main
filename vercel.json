@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "name": "saferoute",
+  "buildCommand": "npm run build",
+  "outputDirectory": "frontend/build",
+  "installCommand": "npm install && cd frontend && npm install",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

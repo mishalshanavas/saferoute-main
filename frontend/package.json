@@ -2,6 +2,7 @@
   "name": "saferoute-frontend",
   "version": "1.0.0",
   "private": true,
+  "homepage": ".",
   "description": "React frontend for SafeRoute MERN application",
   "dependencies": {
     "@gsap/react": "^2.1.2",

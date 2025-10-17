@@ -385,7 +385,47 @@ Modify `utils/safeRoute.js`:
 - Safari: Full support
 - Mobile browsers: Responsive design included
 
-## 📄 License
+## � Deployment
+
+### Vercel Deployment (Recommended for Frontend)
+
+This project is configured for easy deployment on Vercel:
+
+1. **Connect to Vercel**:
+   ```bash
+   # Install Vercel CLI
+   npm i -g vercel
+   
+   # Deploy
+   vercel
+   ```
+
+2. **Automatic Configuration**: The project includes:
+   - `vercel.json` for build configuration
+   - Frontend-specific build settings
+   - Proper routing for React SPA
+
+3. **Build Process**: 
+   - Installs frontend dependencies automatically
+   - Runs optimized production build
+   - Serves static files with proper routing
+
+### Environment Variables (if needed)
+```bash
+# Add these in Vercel dashboard if using backend features
+MONGODB_URI=your_mongodb_connection
+JWT_SECRET=your_jwt_secret
+```
+
+### Local Build Test
+```bash
+# Test the build locally
+npm run build
+
+# The build output will be in frontend/build/
+```
+
+## �📄 License
 
 MIT License - feel free to use for hackathons, demos, and learning!
 
