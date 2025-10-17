@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Navigation, Shield, Clock, AlertTriangle, MapPin, Zap } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import LiquidEther from '../components/LiquidEther';
@@ -21,6 +21,12 @@ const DashboardPage = () => {
   const containerRef = useRef(null);
   // eslint-disable-next-line no-unused-vars
   const { isAuthenticated } = useSelector((state) => state.auth);
+
+  // Debug effect to track coordinate changes
+  useEffect(() => {
+    console.log('Coordinates updated:', { startCoords, endCoords });
+    console.log('Button should be enabled:', !!(startCoords && endCoords));
+  }, [startCoords, endCoords]);
 
   const navItems = [
     {
@@ -55,13 +61,23 @@ const DashboardPage = () => {
 
   // Handle place selection from search
   const handleStartPlaceSelect = (place) => {
+    console.log('Start place selected:', place);
+    console.log('Setting start location to:', place.name);
     setStartPlace(place);
+    setStartLocation(place.name); // Update the text value
     setStartCoords([place.lat, place.lng]);
+    console.log('Start coords set to:', [place.lat, place.lng]);
+    console.log('State after start selection - startCoords:', [place.lat, place.lng], 'endCoords:', endCoords);
   };
 
   const handleEndPlaceSelect = (place) => {
+    console.log('End place selected:', place);
+    console.log('Setting end location to:', place.name);
     setEndPlace(place);
+    setEndLocation(place.name); // Update the text value
     setEndCoords([place.lat, place.lng]);
+    console.log('End coords set to:', [place.lat, place.lng]);
+    console.log('State after end selection - startCoords:', startCoords, 'endCoords:', [place.lat, place.lng]);
   };
 
   // Helper function to calculate distance between two points
@@ -77,10 +93,81 @@ const DashboardPage = () => {
     return R * c;
   };
 
+  // Helper function to geocode a location name
+  const geocodeLocation = async (locationName) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName)}&limit=1&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const place = data[0];
+        return {
+          id: place.place_id,
+          name: place.display_name,
+          lat: parseFloat(place.lat),
+          lng: parseFloat(place.lon),
+          address: place.display_name,
+          type: place.type || 'location'
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      return null;
+    }
+  };
+
+  // Enhanced calculate route with fallback geocoding
   const calculateRoute = async () => {
-    if (!startCoords || !endCoords) return;
+    console.log('Calculate route called with:', { startCoords, endCoords, startLocation, endLocation });
+    
+    let finalStartCoords = startCoords;
+    let finalEndCoords = endCoords;
+    
+    // Try to geocode missing coordinates
+    if (!finalStartCoords && startLocation) {
+      console.log('Geocoding start location:', startLocation);
+      const startPlace = await geocodeLocation(startLocation);
+      if (startPlace) {
+        finalStartCoords = [startPlace.lat, startPlace.lng];
+        setStartCoords(finalStartCoords);
+        console.log('Geocoded start coords:', finalStartCoords);
+      }
+    }
+    
+    if (!finalEndCoords && endLocation) {
+      console.log('Geocoding end location:', endLocation);
+      const endPlace = await geocodeLocation(endLocation);
+      if (endPlace) {
+        finalEndCoords = [endPlace.lat, endPlace.lng];
+        setEndCoords(finalEndCoords);
+        console.log('Geocoded end coords:', finalEndCoords);
+      }
+    }
+    
+    if (!finalStartCoords || !finalEndCoords) {
+      console.log('Still missing coordinates after geocoding attempt');
+      // Provide helpful feedback to user
+      if (!startLocation && !endLocation) {
+        alert('Please enter both start and destination locations.');
+      } else if (!startLocation) {
+        alert('Please enter a starting location.');
+      } else if (!endLocation) {
+        alert('Please enter a destination location.');
+      } else if (!finalStartCoords && !finalEndCoords) {
+        alert('Could not find coordinates for the entered locations. Please try selecting from the dropdown suggestions.');
+      } else if (!finalStartCoords) {
+        alert('Could not find coordinates for the starting location. Please try selecting from the dropdown suggestions.');
+      } else {
+        alert('Could not find coordinates for the destination. Please try selecting from the dropdown suggestions.');
+      }
+      return;
+    }
     
     setIsLoading(true);
+    console.log('Starting route calculation with coords:', { finalStartCoords, finalEndCoords });
     
     try {
       // Use OpenRouteService for routing (free alternative to Google)
@@ -88,8 +175,8 @@ const DashboardPage = () => {
       const response = await fetch(
         `https://api.openrouteservice.org/v2/directions/${profile}?` +
         `api_key=5b3ce3597851110001cf6248d287262e8531419b9c38babc40038b43&` +
-        `start=${startCoords[1]},${startCoords[0]}&` +
-        `end=${endCoords[1]},${endCoords[0]}`
+        `start=${finalStartCoords[1]},${finalStartCoords[0]}&` +
+        `end=${finalEndCoords[1]},${finalEndCoords[0]}`
       );
       
       if (response.ok) {
@@ -142,7 +229,7 @@ const DashboardPage = () => {
       // Try a different approach with OSRM (Open Source Routing Machine)
       try {
         const osrmResponse = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${startCoords[1]},${startCoords[0]};${endCoords[1]},${endCoords[0]}?overview=full&geometries=geojson`
+          `https://router.project-osrm.org/route/v1/driving/${finalStartCoords[1]},${finalStartCoords[0]};${finalEndCoords[1]},${finalEndCoords[0]}?overview=full&geometries=geojson`
         );
         
         if (osrmResponse.ok) {
@@ -177,10 +264,10 @@ const DashboardPage = () => {
       
       // Final fallback to simple line
       console.log('Using straight line fallback');
-      const points = [startCoords, endCoords];
+      const points = [finalStartCoords, finalEndCoords];
       setRoutePoints(points);
       
-      const distance = calculateDistance(startCoords, endCoords);
+      const distance = calculateDistance(finalStartCoords, finalEndCoords);
       setRouteData({
         distance: `${distance.toFixed(1)} km`,
         duration: `${Math.round(distance * 3)} mins`,
@@ -352,20 +439,37 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
+                  {/* Debug Info - Temporary */}
+                  <div className="p-3 bg-red-900/50 rounded text-xs text-white space-y-1">
+                    <div>Debug Info:</div>
+                    <div>Start Location: "{startLocation}"</div>
+                    <div>End Location: "{endLocation}"</div>
+                    <div>Start Coords: {startCoords ? `[${startCoords[0]}, ${startCoords[1]}]` : 'null'}</div>
+                    <div>End Coords: {endCoords ? `[${endCoords[0]}, ${endCoords[1]}]` : 'null'}</div>
+                    <div>Button should be: {(!startCoords || !endCoords) ? 'DISABLED' : 'ENABLED'}</div>
+                  </div>
+
                   {/* Calculate Route Button */}
                   <StarBorder
                     as="button"
-                    className="w-full mt-6"
-                    color="#FF6B9D"
+                    className={`w-full mt-6 transition-all duration-300 ${
+                      !startLocation || !endLocation ? 'opacity-60 cursor-not-allowed' : 'hover:scale-105'
+                    }`}
+                    color={!startLocation || !endLocation ? "#666" : "#FF6B9D"}
                     speed="1.5s"
                     onClick={calculateRoute}
-                    disabled={!startCoords || !endCoords || isLoading}
+                    disabled={isLoading || (!startLocation || !endLocation)}
                   >
                     <div className="py-4 px-6 text-lg font-medium">
                       {isLoading ? (
                         <span className="flex items-center justify-center gap-2">
                           <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
                           Calculating...
+                        </span>
+                      ) : !startLocation || !endLocation ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <MapPin className="w-5 h-5" />
+                          Enter Both Locations
                         </span>
                       ) : (
                         <span className="flex items-center justify-center gap-2">
@@ -448,13 +552,12 @@ const DashboardPage = () => {
                     className="w-full h-full rounded-xl"
                   />
                   
-                  {/* Map Status Overlay */}
+                  {/* Show instruction overlay only when no locations are set, but smaller */}
                   {!startCoords && !endCoords && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-xl z-10">
+                    <div className="absolute top-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg p-3 z-10">
                       <div className="text-center">
-                        <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-300 text-lg">Select locations to view route</p>
-                        <p className="text-gray-500 text-sm">Search for places in the sidebar</p>
+                        <MapPin className="w-5 h-5 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-300 text-sm">Search for locations to start planning your route</p>
                       </div>
                     </div>
                   )}

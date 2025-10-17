@@ -18,6 +18,7 @@ const PlaceSearchInput = ({
   const debounceRef = useRef(null);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   // Free geocoding API using Nominatim (OpenStreetMap)
   const searchPlaces = async (query) => {
@@ -118,11 +119,13 @@ const PlaceSearchInput = ({
   };
 
   const handlePlaceSelect = (place) => {
+    console.log('handlePlaceSelect called with:', place);
     onChange(place.name);
     onPlaceSelect(place);
     setSuggestions([]);
     setShowDropdown(false);
     setSelectedIndex(-1);
+    console.log('Place selection completed');
   };
 
   const handleKeyDown = (e) => {
@@ -184,7 +187,11 @@ const PlaceSearchInput = ({
     };
 
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      // Check if click is outside both the input container AND the dropdown
+      const isOutsideContainer = containerRef.current && !containerRef.current.contains(event.target);
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(event.target);
+      
+      if (isOutsideContainer && isOutsideDropdown) {
         setShowDropdown(false);
         setSelectedIndex(-1);
       }
@@ -242,6 +249,7 @@ const PlaceSearchInput = ({
       {/* Suggestions Dropdown - Rendered as Portal */}
       {showDropdown && suggestions.length > 0 && ReactDOM.createPortal(
         <div 
+          ref={dropdownRef}
           className="fixed bg-black/95 border border-gray-600 rounded-xl backdrop-blur-md max-h-60 overflow-y-auto shadow-2xl"
           style={{
             top: `${dropdownPosition.top}px`,
@@ -256,7 +264,12 @@ const PlaceSearchInput = ({
               className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors border-b border-gray-600 last:border-b-0 ${
                 selectedIndex === index ? 'bg-gray-700' : 'bg-transparent'
               }`}
-              onClick={() => handlePlaceSelect(suggestion)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Dropdown item clicked:', suggestion);
+                handlePlaceSelect(suggestion);
+              }}
             >
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-cyan-400 mt-1 flex-shrink-0" />

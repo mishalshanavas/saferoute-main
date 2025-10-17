@@ -26,16 +26,39 @@ const SimpleMap = ({
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Create map instance
-    mapInstanceRef.current = L.map(mapRef.current).setView([40.7128, -74.0060], 10); // Default to NYC
+    console.log('Initializing map...');
+    
+    // Small delay to ensure container is ready
+    const timer = setTimeout(() => {
+      // Create map instance
+      mapInstanceRef.current = L.map(mapRef.current, {
+        scrollWheelZoom: true,
+        dragging: true,
+        touchZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
+        keyboard: true,
+        zoomControl: true
+      }).setView([40.7128, -74.0060], 10); // Default to NYC
 
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 18,
-    }).addTo(mapInstanceRef.current);
+      // Add OpenStreetMap tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18,
+      }).addTo(mapInstanceRef.current);
+
+      console.log('Map initialized successfully');
+      
+      // Force a resize to ensure map renders correctly
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 100);
+    }, 100);
 
     return () => {
+      clearTimeout(timer);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -47,6 +70,8 @@ const SimpleMap = ({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
+    console.log('Updating markers with coords:', { startCoords, endCoords });
+
     // Clear existing markers
     markersRef.current.forEach(marker => {
       mapInstanceRef.current.removeLayer(marker);
@@ -56,7 +81,8 @@ const SimpleMap = ({
     const bounds = [];
 
     // Add start marker
-    if (startCoords) {
+    if (startCoords && startCoords.length === 2) {
+      console.log('Adding start marker at:', startCoords);
       const startMarker = L.marker([startCoords[0], startCoords[1]])
         .addTo(mapInstanceRef.current)
         .bindPopup('Start Location');
@@ -66,7 +92,8 @@ const SimpleMap = ({
     }
 
     // Add end marker
-    if (endCoords) {
+    if (endCoords && endCoords.length === 2) {
+      console.log('Adding end marker at:', endCoords);
       const endMarker = L.marker([endCoords[0], endCoords[1]])
         .addTo(mapInstanceRef.current)
         .bindPopup('End Location');
@@ -78,8 +105,10 @@ const SimpleMap = ({
     // Fit map to show both markers
     if (bounds.length > 0) {
       if (bounds.length === 1) {
+        console.log('Centering map on single marker');
         mapInstanceRef.current.setView(bounds[0], 14);
       } else {
+        console.log('Fitting map to bounds for multiple markers');
         mapInstanceRef.current.fitBounds(bounds, { padding: [20, 20] });
       }
     }
@@ -117,6 +146,8 @@ const SimpleMap = ({
         width: '100%', 
         height: '100%', 
         minHeight: '400px',
+        position: 'relative',
+        zIndex: 1,
         ...style 
       }} 
     />
