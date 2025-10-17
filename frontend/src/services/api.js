@@ -29,6 +29,7 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // eslint-disable-next-line no-unused-vars
     const message = error.response?.data?.message || 'An error occurred';
     
     if (error.response?.status === 401) {

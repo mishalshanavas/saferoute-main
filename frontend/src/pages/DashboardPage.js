@@ -28,6 +28,7 @@ const DashboardPage = () => {
   const [endCoords, setEndCoords] = useState(null);
   const [routePoints, setRoutePoints] = useState([]);
   const containerRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   const navItems = [

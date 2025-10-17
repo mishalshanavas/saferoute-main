@@ -25,10 +25,15 @@ export default function LiquidEther({
 }) {
   const mountRef = useRef(null);
   const webglRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const resizeObserverRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const rafRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const intersectionObserverRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const isVisibleRef = useRef(true);
+  // eslint-disable-next-line no-unused-vars
   const resizeRafRef = useRef(null);
 
   useEffect(() => {
@@ -64,7 +69,9 @@ export default function LiquidEther({
       return tex;
     }
 
+    // eslint-disable-next-line no-unused-vars
     const paletteTex = makePaletteTexture(colors);
+    // eslint-disable-next-line no-unused-vars
     const bgVec4 = new THREE.Vector4(0, 0, 0, 0); // always transparent
 
     class CommonClass {
@@ -111,6 +118,7 @@ export default function LiquidEther({
         this.time += this.delta;
       }
     }
+    // eslint-disable-next-line no-unused-vars
     const Common = new CommonClass();
 
     class MouseClass {

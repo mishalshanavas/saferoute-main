@@ -1,4 +1,5 @@
-﻿import React, { useRef } from 'react';
+﻿/* eslint-disable unicode-bom */
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import SplitText from '../components/SplitText';
@@ -43,7 +44,6 @@ const HomePage = () => {
 
   return (
     <div className="bg-black text-white overflow-hidden relative">
-      {/* Navigation */}
       <CardNav
         logo={logo}
         logoAlt="SafeRoute Logo"
@@ -55,7 +55,6 @@ const HomePage = () => {
         ease="power3.out"
       />
 
-      {/* Background Galaxy Effect */}
       <div className="fixed inset-0 z-0">
         <Galaxy 
           mouseRepulsion={true}
@@ -67,14 +66,12 @@ const HomePage = () => {
         />
       </div>
 
-      {/* Pixel Trail Effect */}
       <PixelTrail />
       
       <div className="min-h-screen relative z-10" ref={containerRef}>
         <main className="pt-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center space-y-16">
-              {/* Main Title with Advanced Animation */}
               <div className="mb-8">
                 <SplitText
                   text="SafeRoute"
@@ -104,7 +101,6 @@ const HomePage = () => {
                 />
               </div>
 
-              {/* Subtitle */}
               <div className="mb-12">
                 <SplitText
                   text="Navigate Safely. Arrive Securely."
@@ -124,15 +120,10 @@ const HomePage = () => {
                 />
               </div>
 
-              {/* CTA Button */}
               <div className="mt-16">
                 <Link
                   to={isAuthenticated ? "/dashboard" : "/login"}
-                  className="inline-block px-12 py-4 text-lg font-medium bg-white text-black 
-                           hover:bg-gray-100 transition-all duration-300 
-                           transform hover:scale-105 hover:shadow-2xl
-                           border border-white/20 backdrop-blur-sm
-                           animate-fade-in-up opacity-0"
+                  className="inline-block px-12 py-4 text-lg font-medium bg-white text-black hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-white/20 backdrop-blur-sm animate-fade-in-up opacity-0"
                   style={{
                     animationDelay: '2.5s',
                     animationFillMode: 'forwards'
