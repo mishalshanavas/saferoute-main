@@ -27,8 +27,10 @@ function App() {
   const location = useLocation();
   const { isLoading, isAuthenticated, bypassAuth } = useSelector((state) => state.auth);
   
-  // Check if current route is the homepage
+  // Check if current route is the homepage or dashboard
   const isHomePage = location.pathname === '/';
+  const isDashboardPage = location.pathname === '/dashboard';
+  const shouldShowNavbarFooter = !isHomePage && !isDashboardPage;
 
   useEffect(() => {
     // Check if bypass authentication is enabled
@@ -54,8 +56,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Only show Navbar if not on homepage */}
-      {!isHomePage && <Navbar />}
+      {/* Only show Navbar if not on homepage or dashboard */}
+      {shouldShowNavbarFooter && <Navbar />}
       
       <main className="flex-1">
         <Routes>
@@ -104,8 +106,8 @@ function App() {
         </Routes>
       </main>
 
-      {/* Only show Footer if not on homepage */}
-      {!isHomePage && <Footer />}
+      {/* Only show Footer if not on homepage or dashboard */}
+      {shouldShowNavbarFooter && <Footer />}
       
       {/* Toast Notifications */}
       <Toaster
