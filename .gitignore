@@ -6,13 +6,6 @@
 frontend/node_modules
 backend/node_modules
 
-# cache directories
-**/.cache
-**/node_modules/.cache
-.cache/
-frontend/node_modules/.cache/
-backend/node_modules/.cache/
-
 # next.js
 /.next/
 /out/
