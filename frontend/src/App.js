@@ -18,6 +18,7 @@ import RouteHistoryPage from './pages/RouteHistoryPage';
 import SavedRoutesPage from './pages/SavedRoutesPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
+import ContributePage from './pages/ContributePage';
 
 // Protected Route Component
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -100,6 +101,9 @@ function App() {
               <ProfilePage />
             </ProtectedRoute>
           } />
+
+          {/* Contribute Page - Public Route */}
+          <Route path="/contribute" element={<ContributePage />} />
 
           {/* 404 Page */}
           <Route path="*" element={<NotFoundPage />} />

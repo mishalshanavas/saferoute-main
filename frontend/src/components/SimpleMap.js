@@ -15,6 +15,7 @@ const SimpleMap = ({
   startCoords, 
   endCoords, 
   routePoints = [], 
+  overlayData = null,
   activeOverlays = [],
   className = "",
   style = {}
@@ -59,13 +60,19 @@ const SimpleMap = ({
     });
   };
 
-  // Generate and update overlay data based on map center
+  // Update overlay data - use passed prop or generate if not provided
   const updateOverlayData = () => {
     if (!mapInstanceRef.current) return;
     
-    const center = mapInstanceRef.current.getCenter();
-    const overlayData = generateOverlayData(center.lat, center.lng, 15);
-    overlayDataRef.current = overlayData;
+    // Use passed overlayData prop if available, otherwise generate random data
+    if (overlayData) {
+      console.log('📍 Using real overlay data from database');
+      overlayDataRef.current = overlayData;
+    } else {
+      console.log('⚠️ No overlay data provided, generating random data');
+      const center = mapInstanceRef.current.getCenter();
+      overlayDataRef.current = generateOverlayData(center.lat, center.lng, 15);
+    }
     updateOverlayMarkers();
   };
 
@@ -207,6 +214,14 @@ const SimpleMap = ({
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Update overlay data when overlayData prop changes
+  useEffect(() => {
+    if (overlayData) {
+      console.log('📍 Overlay data updated, refreshing markers');
+      updateOverlayData();
+    }
+  }, [overlayData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update overlay markers when activeOverlays changes
   useEffect(() => {

@@ -213,14 +213,14 @@ const PlaceSearchInput = ({
   return (
     <div ref={containerRef} className={`relative ${className}`}>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <div className={`w-3 h-3 bg-gradient-to-r ${gradientColor} rounded-full shadow-lg`}></div>
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MapPin className="w-4 h-4 text-gray-400" />
           </div>
         <input
           ref={inputRef}
           type="text"
           placeholder={placeholder}
-          className="w-full pl-12 pr-12 py-4 bg-black/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300"
+          className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-full focus:ring-2 focus:ring-black focus:border-black text-gray-900 placeholder-gray-400 text-sm transition-all"
           value={value}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -230,19 +230,21 @@ const PlaceSearchInput = ({
           }}
           autoComplete="off"
         />
-        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
           {isLoading && (
-            <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
           )}
           {value && !isLoading && (
             <button
               onClick={clearInput}
-              className="p-1 hover:bg-gray-700 rounded-full transition-colors"
+              className="p-0.5 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <X className="w-4 h-4 text-gray-400 hover:text-white" />
+              <X className="w-3 h-3 text-gray-400 hover:text-gray-900" />
             </button>
           )}
-          <Search className="w-5 h-5 text-gray-400" />
+          {!isLoading && !value && (
+            <Search className="w-4 h-4 text-gray-400" />
+          )}
         </div>
       </div>
       
@@ -250,7 +252,7 @@ const PlaceSearchInput = ({
       {showDropdown && suggestions.length > 0 && ReactDOM.createPortal(
         <div 
           ref={dropdownRef}
-          className="fixed bg-black/95 border border-gray-600 rounded-xl backdrop-blur-md max-h-60 overflow-y-auto shadow-2xl"
+          className="fixed bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto"
           style={{
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
@@ -261,8 +263,8 @@ const PlaceSearchInput = ({
           {suggestions.map((suggestion, index) => (
             <button
               key={suggestion.id}
-              className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors border-b border-gray-600 last:border-b-0 ${
-                selectedIndex === index ? 'bg-gray-700' : 'bg-transparent'
+              className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                selectedIndex === index ? 'bg-gray-50' : 'bg-transparent'
               }`}
               onClick={(e) => {
                 e.preventDefault();
@@ -272,12 +274,12 @@ const PlaceSearchInput = ({
               }}
             >
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-cyan-400 mt-1 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-white font-medium truncate">
+                  <div className="text-gray-900 font-medium text-sm truncate">
                     {suggestion.name.split(',')[0]}
                   </div>
-                  <div className="text-gray-400 text-sm truncate">
+                  <div className="text-gray-500 text-xs truncate">
                     {suggestion.address}
                   </div>
                 </div>
