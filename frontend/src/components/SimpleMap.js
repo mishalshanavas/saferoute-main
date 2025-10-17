@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { generateOverlayData } from '../data/mapOverlays';
 
 // Fix for default markers in Leaflet with React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -14,6 +15,7 @@ const SimpleMap = ({
   startCoords, 
   endCoords, 
   routePoints = [], 
+  activeOverlays = [],
   className = "",
   style = {}
 }) => {
@@ -21,6 +23,98 @@ const SimpleMap = ({
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const routeLayerRef = useRef(null);
+  const overlayMarkersRef = useRef([]);
+  const overlayDataRef = useRef(null);
+
+  // Helper function to create custom emoji markers
+  const createEmojiMarker = (emoji, item) => {
+    const markerHtml = `
+      <div style="
+        background: ${item.type === 'high_risk_area' ? '#ff4444' : 
+                     item.type === 'security_camera' ? '#4CAF50' : '#2196F3'};
+        border: 3px solid white;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      " 
+      onmouseover="this.style.transform='scale(1.15)'; this.style.zIndex='1001';"
+      onmouseout="this.style.transform='scale(1)'; this.style.zIndex='1000';">
+        ${emoji}
+      </div>
+    `;
+    
+    return L.divIcon({
+      html: markerHtml,
+      className: 'custom-emoji-marker',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18]
+    });
+  };
+
+  // Generate and update overlay data based on map center
+  const updateOverlayData = () => {
+    if (!mapInstanceRef.current) return;
+    
+    const center = mapInstanceRef.current.getCenter();
+    const overlayData = generateOverlayData(center.lat, center.lng, 15);
+    overlayDataRef.current = overlayData;
+    updateOverlayMarkers();
+  };
+
+  // Update overlay markers based on active filters
+  const updateOverlayMarkers = () => {
+    if (!mapInstanceRef.current || !overlayDataRef.current) return;
+
+    // Clear existing overlay markers
+    overlayMarkersRef.current.forEach(marker => {
+      mapInstanceRef.current.removeLayer(marker);
+    });
+    overlayMarkersRef.current = [];
+
+    // Add markers for active overlays
+    activeOverlays.forEach(overlayType => {
+      const items = overlayDataRef.current[overlayType] || [];
+      
+      items.forEach(item => {
+        const marker = L.marker([item.lat, item.lng], {
+          icon: createEmojiMarker(item.icon, item)
+        }).addTo(mapInstanceRef.current);
+
+        // Add popup with enhanced item details
+        const popupContent = `
+          <div style="font-family: system-ui; min-width: 250px; max-width: 300px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span style="font-size: 20px;">${item.icon}</span>
+              <strong style="color: #333; font-size: 16px;">${item.name}</strong>
+            </div>
+            <p style="margin: 4px 0; color: #666; font-size: 14px; line-height: 1.4;">${item.description}</p>
+            <div style="margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid ${item.type === 'high_risk_area' ? '#ff4444' : item.type === 'security_camera' ? '#4CAF50' : '#2196F3'};">
+              <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
+                <strong>Category:</strong> ${item.category}
+              </div>
+              ${item.roadName ? `<div style="font-size: 12px; color: #666; margin-bottom: 4px;"><strong>Location:</strong> ${item.roadName}</div>` : ''}
+              ${item.riskLevel ? `<div style="font-size: 12px; margin-bottom: 4px;"><strong>Risk Level:</strong> <span style="color: ${item.riskLevel === 'high' ? '#ff4444' : '#ff8800'}; font-weight: bold; text-transform: uppercase;">${item.riskLevel}</span></div>` : ''}
+              ${item.isIntersection ? '<div style="font-size: 12px; color: #2196F3; font-weight: bold;">📍 Major Intersection</div>' : ''}
+              <div style="font-size: 11px; color: #999; margin-top: 6px; padding-top: 4px; border-top: 1px solid #eee;">
+                Coordinates: ${item.lat.toFixed(6)}, ${item.lng.toFixed(6)}
+              </div>
+            </div>
+          </div>
+        `;
+        
+        marker.bindPopup(popupContent);
+        overlayMarkersRef.current.push(marker);
+      });
+    });
+  };
 
   // Initialize map
   useEffect(() => {
@@ -28,43 +122,47 @@ const SimpleMap = ({
 
     console.log('Initializing map...');
     
-    // Small delay to ensure container is ready
-    const timer = setTimeout(() => {
-      // Create map instance
-      mapInstanceRef.current = L.map(mapRef.current, {
-        scrollWheelZoom: true,
-        dragging: true,
-        touchZoom: true,
-        doubleClickZoom: true,
-        boxZoom: true,
-        keyboard: true,
-        zoomControl: true
-      }).setView([40.7128, -74.0060], 10); // Default to NYC
+    // Create map instance
+    mapInstanceRef.current = L.map(mapRef.current, {
+      scrollWheelZoom: true,
+      dragging: true,
+      touchZoom: true,
+      doubleClickZoom: true,
+      boxZoom: true,
+      keyboard: true,
+      zoomControl: true
+    }).setView([40.7128, -74.0060], 10); // Default to NYC
 
-      // Add OpenStreetMap tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 18,
-      }).addTo(mapInstanceRef.current);
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 18,
+    }).addTo(mapInstanceRef.current);
 
-      console.log('Map initialized successfully');
-      
-      // Force a resize to ensure map renders correctly
+    console.log('Map initialized successfully');
+
+    // Generate initial overlay data
+    updateOverlayData();
+
+    // Add event listener for map move to regenerate overlays
+    mapInstanceRef.current.on('moveend', () => {
       setTimeout(() => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.invalidateSize();
-        }
-      }, 100);
-    }, 100);
+        updateOverlayData();
+      }, 500);
+    });
 
     return () => {
-      clearTimeout(timer);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Update overlay markers when activeOverlays changes
+  useEffect(() => {
+    updateOverlayMarkers();
+  }, [activeOverlays]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update markers when coordinates change
   useEffect(() => {
@@ -72,7 +170,7 @@ const SimpleMap = ({
 
     console.log('Updating markers with coords:', { startCoords, endCoords });
 
-    // Clear existing markers
+    // Clear existing route markers
     markersRef.current.forEach(marker => {
       mapInstanceRef.current.removeLayer(marker);
     });

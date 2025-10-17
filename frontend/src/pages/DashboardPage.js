@@ -6,6 +6,8 @@ import StarBorder from '../components/StarBorder';
 import CardNav from '../components/CardNav';
 import PlaceSearchInput from '../components/PlaceSearchInput';
 import SimpleMap from '../components/SimpleMap';
+import MapOverlayFilters from '../components/MapOverlayFilters';
+import { generateOverlayData } from '../data/mapOverlays';
 
 const DashboardPage = () => {
   const [startLocation, setStartLocation] = useState('');
@@ -18,6 +20,7 @@ const DashboardPage = () => {
   const [startCoords, setStartCoords] = useState(null);
   const [endCoords, setEndCoords] = useState(null);
   const [routePoints, setRoutePoints] = useState([]);
+  const [activeOverlays, setActiveOverlays] = useState([]);
   const containerRef = useRef(null);
   // eslint-disable-next-line no-unused-vars
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -35,6 +38,17 @@ const DashboardPage = () => {
       calculateRoute();
     }
   }, [routeType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle overlay filter toggle
+  const handleOverlayToggle = (overlayId) => {
+    setActiveOverlays(prev => {
+      if (prev.includes(overlayId)) {
+        return prev.filter(id => id !== overlayId);
+      } else {
+        return [...prev, overlayId];
+      }
+    });
+  };
 
   const navItems = [
     {
@@ -125,6 +139,92 @@ const DashboardPage = () => {
       console.error('Geocoding error:', error);
       return null;
     }
+  };
+
+  // Route safety analysis function
+  const analyzeRouteSafety = (routePoints, overlayData) => {
+    if (!routePoints || !overlayData) return { safetyScore: 50, details: {} };
+
+    let safetyScore = 100;
+    let riskPoints = 0;
+    let securityPoints = 0;
+    let cctvPoints = 0;
+    
+    const PROXIMITY_THRESHOLD = 0.005; // ~500 meters in degrees
+    
+    routePoints.forEach(point => {
+      // Check proximity to high-risk areas
+      overlayData.highRiskAreas?.forEach(risk => {
+        const distance = Math.sqrt(
+          Math.pow(point[0] - risk.lat, 2) + Math.pow(point[1] - risk.lng, 2)
+        );
+        if (distance < PROXIMITY_THRESHOLD) {
+          riskPoints++;
+          safetyScore -= risk.riskLevel === 'high' ? 15 : 8;
+        }
+      });
+      
+      // Check proximity to security cameras (increases safety)
+      overlayData.securityCameras?.forEach(camera => {
+        const distance = Math.sqrt(
+          Math.pow(point[0] - camera.lat, 2) + Math.pow(point[1] - camera.lng, 2)
+        );
+        if (distance < PROXIMITY_THRESHOLD) {
+          securityPoints++;
+          safetyScore += camera.isIntersection ? 8 : 5;
+        }
+      });
+      
+      // Check proximity to CCTV cameras
+      overlayData.cctvCameras?.forEach(cctv => {
+        const distance = Math.sqrt(
+          Math.pow(point[0] - cctv.lat, 2) + Math.pow(point[1] - cctv.lng, 2)
+        );
+        if (distance < PROXIMITY_THRESHOLD) {
+          cctvPoints++;
+          safetyScore += 3;
+        }
+      });
+    });
+    
+    // Ensure score stays within bounds
+    safetyScore = Math.max(0, Math.min(100, safetyScore));
+    
+    return {
+      safetyScore,
+      details: {
+        riskPoints,
+        securityPoints,
+        cctvPoints,
+        securityCoverage: ((securityPoints + cctvPoints) / routePoints.length * 100).toFixed(1),
+        riskExposure: (riskPoints / routePoints.length * 100).toFixed(1)
+      }
+    };
+  };
+
+  // Enhanced route scoring for safest route selection
+  const scoreRouteForSafety = (route, overlayData) => {
+    const points = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+    const safetyAnalysis = analyzeRouteSafety(points, overlayData);
+    
+    // Combine distance penalty with safety score
+    const distanceFactor = route.distance / 1000; // Convert to km
+    const timeFactor = route.duration / 3600; // Convert to hours
+    
+    // Higher safety score is better, lower distance/time is better
+    const safetyWeight = 0.7;
+    const efficiencyWeight = 0.3;
+    
+    const normalizedSafety = safetyAnalysis.safetyScore / 100;
+    const normalizedEfficiency = 1 / (1 + distanceFactor * 0.1 + timeFactor * 0.2);
+    
+    return {
+      totalScore: (normalizedSafety * safetyWeight + normalizedEfficiency * efficiencyWeight) * 100,
+      safetyScore: safetyAnalysis.safetyScore,
+      safetyDetails: safetyAnalysis.details,
+      distance: distanceFactor,
+      duration: timeFactor
+    };
   };
 
   // Enhanced calculate route with fallback geocoding
@@ -220,25 +320,67 @@ const DashboardPage = () => {
       }
       
       if (routes.length > 0) {
-        const route = routes[0];
-        const coordinates = route.geometry.coordinates;
+        // Generate overlay data for safety analysis
+        const overlayData = generateOverlayData(
+          (finalStartCoords[0] + finalEndCoords[0]) / 2,
+          (finalStartCoords[1] + finalEndCoords[1]) / 2,
+          15
+        );
+        
+        let selectedRoute;
+        let safetyAnalysis;
+        
+        if (routeType === 'safest' && routes.length > 1) {
+          // Score all available routes for safety
+          const routeScores = routes.map(route => ({
+            route,
+            score: scoreRouteForSafety(route.properties.segments[0], overlayData)
+          }));
+          
+          // Select the route with the highest safety score
+          routeScores.sort((a, b) => b.score.totalScore - a.score.totalScore);
+          selectedRoute = routeScores[0].route;
+          safetyAnalysis = routeScores[0].score;
+          
+          console.log('Route safety scores:', routeScores.map(rs => ({
+            distance: rs.score.distance.toFixed(1),
+            safetyScore: rs.score.safetyScore.toFixed(1),
+            totalScore: rs.score.totalScore.toFixed(1)
+          })));
+        } else {
+          selectedRoute = routes[0];
+          const points = selectedRoute.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+          safetyAnalysis = analyzeRouteSafety(points, overlayData);
+        }
+        
+        const coordinates = selectedRoute.geometry.coordinates;
         
         // Convert coordinates to [lat, lng] format
         const points = coordinates.map(coord => [coord[1], coord[0]]);
         setRoutePoints(points);
         
-        const distance = (route.properties.segments[0].distance / 1000).toFixed(1);
-        const duration = Math.round(route.properties.segments[0].duration / 60);
+        const distance = (selectedRoute.properties.segments[0].distance / 1000).toFixed(1);
+        const duration = Math.round(selectedRoute.properties.segments[0].duration / 60);
+        
+        // Calculate actual safety metrics
+        const safetyScore = safetyAnalysis.safetyScore || safetyAnalysis.score?.safetyScore || 50;
+        const securityCoverage = safetyAnalysis.details?.securityCoverage || 
+                                safetyAnalysis.safetyDetails?.securityCoverage || '0';
+        const riskExposure = safetyAnalysis.details?.riskExposure || 
+                            safetyAnalysis.safetyDetails?.riskExposure || '0';
         
         setRouteData({
           distance: `${distance} km`,
           duration: `${duration} mins`,
-          safetyScore: routeType === 'safest' ? '95%' : '78%',
-          hazardCount: routeType === 'safest' ? 1 : Math.floor(Math.random() * 5) + 1,
-          routeType: routeType
+          safetyScore: `${Math.round(safetyScore)}%`,
+          hazardCount: Math.max(0, Math.floor(parseFloat(riskExposure) / 10)),
+          routeType: routeType,
+          securityCoverage: `${securityCoverage}%`,
+          riskExposure: `${riskExposure}%`,
+          safetyDetails: safetyAnalysis.details || safetyAnalysis.safetyDetails
         });
         
-        console.log(`${routeType} route calculated successfully`);
+        console.log(`${routeType} route calculated successfully with safety score: ${safetyScore.toFixed(1)}%`);
         return; // Exit if successful
       } else {
         console.log('No routes found in API response');
@@ -268,14 +410,39 @@ const DashboardPage = () => {
           console.log('OSRM Response:', osrmData);
           
           if (osrmData.routes && osrmData.routes.length > 0) {
-            // For safest route, try to use an alternative route if available
+            // Generate overlay data for safety analysis
+            const overlayData = generateOverlayData(
+              (finalStartCoords[0] + finalEndCoords[0]) / 2,
+              (finalStartCoords[1] + finalEndCoords[1]) / 2,
+              15
+            );
+            
             let selectedRoute;
+            let safetyAnalysis;
+            
             if (routeType === 'safest' && osrmData.routes.length > 1) {
-              // Use the second route (alternative) which might be safer
-              selectedRoute = osrmData.routes[1];
-              console.log('Using alternative route for safety');
+              // Analyze all available routes for safety
+              const routeScores = osrmData.routes.map(route => {
+                const points = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                return {
+                  route,
+                  analysis: analyzeRouteSafety(points, overlayData)
+                };
+              });
+              
+              // Select the route with the highest safety score
+              routeScores.sort((a, b) => b.analysis.safetyScore - a.analysis.safetyScore);
+              selectedRoute = routeScores[0].route;
+              safetyAnalysis = routeScores[0].analysis;
+              
+              console.log('OSRM route safety scores:', routeScores.map(rs => ({
+                safetyScore: rs.analysis.safetyScore.toFixed(1),
+                distance: (rs.route.distance / 1000).toFixed(1)
+              })));
             } else {
               selectedRoute = osrmData.routes[0];
+              const points = selectedRoute.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+              safetyAnalysis = analyzeRouteSafety(points, overlayData);
             }
             
             const coordinates = selectedRoute.geometry.coordinates;
@@ -290,9 +457,12 @@ const DashboardPage = () => {
             setRouteData({
               distance: `${distance} km`,
               duration: `${duration} mins`,
-              safetyScore: routeType === 'safest' ? '95%' : '78%',
-              hazardCount: routeType === 'safest' ? 1 : Math.floor(Math.random() * 5) + 1,
-              routeType: routeType
+              safetyScore: `${Math.round(safetyAnalysis.safetyScore)}%`,
+              hazardCount: Math.max(0, Math.floor(parseFloat(safetyAnalysis.details.riskExposure) / 10)),
+              routeType: routeType,
+              securityCoverage: `${safetyAnalysis.details.securityCoverage}%`,
+              riskExposure: `${safetyAnalysis.details.riskExposure}%`,
+              safetyDetails: safetyAnalysis.details
             });
             
             return; // Exit early if OSRM worked
@@ -479,16 +649,6 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
-                  {/* Debug Info - Temporary */}
-                  <div className="p-3 bg-red-900/50 rounded text-xs text-white space-y-1">
-                    <div>Debug Info:</div>
-                    <div>Start Location: "{startLocation}"</div>
-                    <div>End Location: "{endLocation}"</div>
-                    <div>Start Coords: {startCoords ? `[${startCoords[0]}, ${startCoords[1]}]` : 'null'}</div>
-                    <div>End Coords: {endCoords ? `[${endCoords[0]}, ${endCoords[1]}]` : 'null'}</div>
-                    <div>Button should be: {(!startCoords || !endCoords) ? 'DISABLED' : 'ENABLED'}</div>
-                  </div>
-
                   {/* Calculate Route Button */}
                   <StarBorder
                     as="button"
@@ -558,11 +718,33 @@ const DashboardPage = () => {
                       <div className="flex justify-between items-center p-3 bg-black/30 rounded-lg backdrop-blur-sm">
                         <span className="text-gray-300">Safety Score</span>
                         <span className={`font-medium ${
-                          parseInt(routeData.safetyScore) > 85 ? 'text-green-400' : 'text-yellow-400'
+                          parseInt(routeData.safetyScore) > 85 ? 'text-green-400' : 
+                          parseInt(routeData.safetyScore) > 70 ? 'text-yellow-400' : 'text-red-400'
                         }`}>
                           {routeData.safetyScore}
                         </span>
                       </div>
+                      
+                      {routeData.securityCoverage && (
+                        <div className="flex justify-between items-center p-3 bg-black/30 rounded-lg backdrop-blur-sm">
+                          <span className="text-gray-300">Security Coverage</span>
+                          <span className="text-blue-400 font-medium">
+                            📹 {routeData.securityCoverage}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {routeData.riskExposure && (
+                        <div className="flex justify-between items-center p-3 bg-black/30 rounded-lg backdrop-blur-sm">
+                          <span className="text-gray-300">Risk Exposure</span>
+                          <span className={`font-medium ${
+                            parseFloat(routeData.riskExposure) < 5 ? 'text-green-400' : 
+                            parseFloat(routeData.riskExposure) < 15 ? 'text-yellow-400' : 'text-red-400'
+                          }`}>
+                            ⚠️ {routeData.riskExposure}
+                          </span>
+                        </div>
+                      )}
                       
                       <div className="flex justify-between items-center p-3 bg-black/30 rounded-lg backdrop-blur-sm">
                         <span className="text-gray-300">Hazards</span>
@@ -576,14 +758,37 @@ const DashboardPage = () => {
                     <div className="mt-6 p-4 bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-lg backdrop-blur-sm border border-purple-500/20">
                       <p className="text-sm text-gray-300 leading-relaxed">
                         {routeType === 'fastest' 
-                          ? 'Optimized for shortest travel time with moderate safety considerations and real-time traffic analysis.'
-                          : 'Prioritizes maximum safety with AI-powered hazard detection, avoiding high-risk areas and known danger zones.'
+                          ? `Optimized for shortest travel time with ${routeData.securityCoverage || 'moderate'} security camera coverage and ${routeData.riskExposure || 'standard'} risk exposure.`
+                          : `Prioritizes maximum safety with ${routeData.securityCoverage || 'enhanced'} security coverage, actively avoiding high-risk areas and selecting routes with optimal camera monitoring.`
                         }
                       </p>
+                      {routeData.safetyDetails && (
+                        <div className="mt-3 pt-3 border-t border-purple-500/20">
+                          <div className="flex flex-wrap gap-3 text-xs">
+                            <span className="text-green-400">📹 {routeData.safetyDetails.securityPoints || 0} Security Cameras</span>
+                            <span className="text-blue-400">📷 {routeData.safetyDetails.cctvPoints || 0} CCTV Monitors</span>
+                            <span className="text-red-400">⚠️ {routeData.safetyDetails.riskPoints || 0} Risk Areas</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </StarBorder>
               )}
+
+              {/* Map Overlay Filters */}
+              <StarBorder
+                className="w-full"
+                color="#FF9F00"
+                speed="3s"
+              >
+                <div className="p-6 bg-black/40 backdrop-blur-sm rounded-xl">
+                  <MapOverlayFilters
+                    activeFilters={activeOverlays}
+                    onFilterToggle={handleOverlayToggle}
+                  />
+                </div>
+              </StarBorder>
             </div>
 
             {/* Map Preview */}
@@ -598,6 +803,7 @@ const DashboardPage = () => {
                     startCoords={startCoords}
                     endCoords={endCoords}
                     routePoints={routePoints}
+                    activeOverlays={activeOverlays}
                     className="w-full h-full rounded-xl"
                   />
                   
