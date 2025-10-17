@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Search, MapPin, X } from 'lucide-react';
 
 const PlaceSearchInput = ({ 
@@ -13,6 +14,7 @@ const PlaceSearchInput = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const debounceRef = useRef(null);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
@@ -69,11 +71,23 @@ const PlaceSearchInput = ({
     };
   }, [value]);
 
+  const updateDropdownPosition = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  };
+
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     onChange(newValue);
     setShowDropdown(true);
     setSelectedIndex(-1);
+    updateDropdownPosition();
   };
 
   const handlePlaceSelect = (place) => {
@@ -122,6 +136,46 @@ const PlaceSearchInput = ({
     inputRef.current?.focus();
   };
 
+  // Update position when showing dropdown or on window resize/scroll
+  useEffect(() => {
+    if (showDropdown) {
+      updateDropdownPosition();
+    }
+  }, [showDropdown]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (showDropdown) {
+        updateDropdownPosition();
+      }
+    };
+
+    const handleScroll = () => {
+      if (showDropdown) {
+        updateDropdownPosition();
+      }
+    };
+
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setShowDropdown(false);
+        setSelectedIndex(-1);
+      }
+    };
+
+    if (showDropdown) {
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true);
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
+
   return (
     <div ref={containerRef} className={`relative ${className}`}>
         <div className="relative">
@@ -136,7 +190,10 @@ const PlaceSearchInput = ({
           value={value}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => setShowDropdown(true)}
+          onFocus={() => {
+            setShowDropdown(true);
+            updateDropdownPosition();
+          }}
           autoComplete="off"
         />
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
@@ -155,11 +212,14 @@ const PlaceSearchInput = ({
         </div>
       </div>
       
-      {/* Suggestions Dropdown */}
-      {showDropdown && suggestions.length > 0 && (
+      {/* Suggestions Dropdown - Rendered as Portal */}
+      {showDropdown && suggestions.length > 0 && ReactDOM.createPortal(
         <div 
-          className="absolute top-full left-0 right-0 mt-2 bg-black/95 border border-gray-600 rounded-xl backdrop-blur-md max-h-60 overflow-y-auto shadow-2xl"
+          className="fixed bg-black/95 border border-gray-600 rounded-xl backdrop-blur-md max-h-60 overflow-y-auto shadow-2xl"
           style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
             zIndex: 999999
           }}
         >
@@ -184,7 +244,8 @@ const PlaceSearchInput = ({
               </div>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
