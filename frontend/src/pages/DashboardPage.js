@@ -131,9 +131,6 @@ const DashboardPage = () => {
 
   return (
     <div className="bg-black text-white overflow-hidden relative min-h-screen">
-      {/* Splash Cursor Effect */}
-      <SplashCursor />
-
       {/* Background Animation */}
       <div className="fixed inset-0 z-0">
         <LiquidEther
