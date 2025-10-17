@@ -15,6 +15,7 @@ const PlaceSearchInput = ({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const debounceRef = useRef(null);
   const inputRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Free geocoding API using Nominatim (OpenStreetMap)
   const searchPlaces = async (query) => {
@@ -122,11 +123,11 @@ const PlaceSearchInput = ({
   };
 
   return (
-    <div className={`relative ${className}`}>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <div className={`w-3 h-3 bg-gradient-to-r ${gradientColor} rounded-full shadow-lg`}></div>
-        </div>
+    <div ref={containerRef} className={`relative ${className}`}>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <div className={`w-3 h-3 bg-gradient-to-r ${gradientColor} rounded-full shadow-lg`}></div>
+          </div>
         <input
           ref={inputRef}
           type="text"
@@ -153,15 +154,20 @@ const PlaceSearchInput = ({
           <Search className="w-5 h-5 text-gray-400" />
         </div>
       </div>
-
+      
       {/* Suggestions Dropdown */}
       {showDropdown && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-black/90 border border-gray-600 rounded-xl backdrop-blur-sm z-50 max-h-60 overflow-y-auto">
+        <div 
+          className="absolute top-full left-0 right-0 mt-2 bg-black/95 border border-gray-600 rounded-xl backdrop-blur-md max-h-60 overflow-y-auto shadow-2xl"
+          style={{
+            zIndex: 999999
+          }}
+        >
           {suggestions.map((suggestion, index) => (
             <button
               key={suggestion.id}
-              className={`w-full px-4 py-3 text-left hover:bg-gray-800 transition-colors border-b border-gray-700 last:border-b-0 ${
-                selectedIndex === index ? 'bg-gray-800' : ''
+              className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors border-b border-gray-600 last:border-b-0 ${
+                selectedIndex === index ? 'bg-gray-700' : 'bg-transparent'
               }`}
               onClick={() => handlePlaceSelect(suggestion)}
             >
