@@ -1,141 +1,81 @@
-﻿/* eslint-disable unicode-bom */
-import React, { useRef } from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import SplitText from '../components/SplitText';
-import Galaxy from '../components/Galaxy';
-import PixelTrail from '../components/PixelTrail';
-import CardNav from '../components/CardNav';
-import logo from '../components/logo.svg';
+import { ArrowRight } from 'lucide-react';
 
 const HomePage = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
-  const containerRef = useRef(null);
-
-  const navItems = [
-    {
-      label: "About",
-      bgColor: "#0D0716",
-      textColor: "#fff",
-      links: [
-        { label: "Company", ariaLabel: "About Company" },
-        { label: "Mission", ariaLabel: "About Mission" }
-      ]
-    },
-    {
-      label: "Routes", 
-      bgColor: "#170D27",
-      textColor: "#fff",
-      links: [
-        { label: "Dashboard", ariaLabel: "Route Dashboard", href: "/dashboard" },
-        { label: "History", ariaLabel: "Route History", href: "/route-history" }
-      ]
-    },
-    {
-      label: "Contact",
-      bgColor: "#271E37", 
-      textColor: "#fff",
-      links: [
-        { label: "Support", ariaLabel: "Contact Support" },
-        { label: "Feedback", ariaLabel: "Send Feedback" }
-      ]
-    }
-  ];
 
   return (
-    <div className="bg-black text-white overflow-hidden relative">
-      <CardNav
-        logo={logo}
-        logoAlt="SafeRoute Logo"
-        items={navItems}
-        baseColor="rgba(255, 255, 255, 0.1)"
-        menuColor="#fff"
-        buttonBgColor="#111"
-        buttonTextColor="#fff"
-        ease="power3.out"
-      />
-
-      <div className="fixed inset-0 z-0">
-        <Galaxy 
-          mouseRepulsion={true}
-          mouseInteraction={true}
-          density={1.5}
-          glowIntensity={0.5}
-          saturation={0.8}
-          hueShift={240}
-        />
-      </div>
-
-      <PixelTrail />
-      
-      <div className="min-h-screen relative z-10" ref={containerRef}>
-        <main className="pt-32">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center space-y-16">
-              <div className="mb-8">
-                <SplitText
-                  text="SafeRoute"
-                  className="text-7xl md:text-8xl lg:text-9xl font-black tracking-tight"
-                  splitType="chars"
-                  animation={{
-                    from: { 
-                      opacity: 0, 
-                      y: 100, 
-                      rotationX: -90,
-                      scale: 0.5
-                    },
-                    to: { 
-                      opacity: 1, 
-                      y: 0, 
-                      rotationX: 0,
-                      scale: 1,
-                      duration: 1.2,
-                      ease: "power4.out",
-                      stagger: 0.1
-                    }
-                  }}
-                  gradient={{
-                    colors: ['#ffffff', '#a3a3a3', '#ffffff'],
-                    angle: 45
-                  }}
-                />
-              </div>
-
-              <div className="mb-12">
-                <SplitText
-                  text="Navigate Safely. Arrive Securely."
-                  className="text-xl md:text-2xl font-light tracking-wide text-gray-300"
-                  splitType="words"
-                  animation={{
-                    from: { opacity: 0, y: 50 },
-                    to: { 
-                      opacity: 1, 
-                      y: 0, 
-                      duration: 0.8,
-                      ease: "power3.out",
-                      stagger: 0.1,
-                      delay: 1.5
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="mt-16">
-                <Link
-                  to={isAuthenticated ? "/dashboard" : "/login"}
-                  className="inline-block px-12 py-4 text-lg font-medium bg-white text-black hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-white/20 backdrop-blur-sm animate-fade-in-up opacity-0"
-                  style={{
-                    animationDelay: '2.5s',
-                    animationFillMode: 'forwards'
-                  }}
-                >
-                  {isAuthenticated ? 'Go to Dashboard' : 'Get Started'}
-                </Link>
-              </div>
+    <div className="h-screen bg-white overflow-hidden flex flex-col">
+      {/* Minimal Navigation */}
+      <nav className="border-b border-gray-100 flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="text-xl font-light text-gray-900">
+              SafeRoute
+            </Link>
+            <div className="flex items-center gap-6">
+              <Link to="/contribute" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                Contribute
+              </Link>
+              <Link 
+                to={isAuthenticated ? "/dashboard" : "/login"}
+                className="px-6 py-2 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors"
+              >
+                {isAuthenticated ? 'Dashboard' : 'Sign In'}
+              </Link>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </nav>
+
+      {/* Hero Section - Full Screen */}
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <h1 className="text-6xl sm:text-7xl md:text-8xl font-light text-gray-900 mb-6 leading-none">
+            SafeRoute
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-500 mb-10 font-light">
+            Navigate safely. Arrive securely.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              to={isAuthenticated ? "/dashboard" : "/register"}
+              className="px-8 py-3 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors inline-flex items-center justify-center gap-2"
+            >
+              {isAuthenticated ? 'Dashboard' : 'Get Started'}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/contribute"
+              className="px-8 py-3 border border-gray-200 text-gray-900 text-sm font-medium rounded-full hover:bg-gray-50 transition-colors"
+            >
+              Contribute
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      {/* Minimal Footer */}
+      <footer className="border-t border-gray-100 flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-500">
+            <div>© 2025 SafeRoute</div>
+            <div className="flex gap-6">
+              <Link to="/contribute" className="hover:text-gray-900 transition-colors">
+                Contribute
+              </Link>
+              <a href="#" className="hover:text-gray-900 transition-colors">
+                Privacy
+              </a>
+              <a href="#" className="hover:text-gray-900 transition-colors">
+                Terms
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

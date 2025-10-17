@@ -68,6 +68,9 @@ const Navbar = () => {
                 <Link to="/saved-routes" className={linkClasses}>
                   Saved
                 </Link>
+                <Link to="/contribute" className={linkClasses}>
+                  Contribute
+                </Link>
                 
                 {/* User Menu */}
                 <div className="relative group">
@@ -120,6 +123,9 @@ const Navbar = () => {
               </>
             ) : (
               <>
+                <Link to="/contribute" className={linkClasses}>
+                  Contribute
+                </Link>
                 <Link to="/login" className={linkClasses}>
                   Sign In
                 </Link>

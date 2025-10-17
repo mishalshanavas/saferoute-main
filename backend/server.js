@@ -1,114 +1,78 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const { createServer } = require('http');
-const { Server } = require('socket.io');
+const bodyParser = require('body-parser');
 require('dotenv').config();
 
-const app = express();
-const server = createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
-});
+const connectDB = require('./config/database');
+const contributionRoutes = require('./routes/contributionRoutes');
 
+const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Connect to MongoDB
+connectDB();
+
 // Middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true
-}));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api/', limiter);
-
-app.use(morgan('combined'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// MongoDB connection
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/saferoute', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error('Database connection failed:', error.message);
-    process.exit(1);
-  }
-};
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/routes', require('./routes/routes'));
-app.use('/api/unsafe-zones', require('./routes/unsafeZones'));
-app.use('/api/hazards', require('./routes/hazards'));
-app.use('/api/users', require('./routes/users'));
+app.use('/api/contributions', contributionRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+// Health check route
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'SafeRoute Backend Server is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to SafeRoute API',
+    version: '1.0.0',
+    endpoints: {
+      contributions: {
+        create: 'POST /api/contributions',
+        getAll: 'GET /api/contributions',
+        getById: 'GET /api/contributions/:id',
+        getByType: 'GET /api/contributions/type/:type',
+        getNearby: 'GET /api/contributions/nearby?latitude=&longitude=&radius=',
+        updateStatus: 'PATCH /api/contributions/:id/status',
+        vote: 'POST /api/contributions/:id/vote',
+        delete: 'DELETE /api/contributions/:id',
+        statistics: 'GET /api/contributions/statistics'
+      }
+    }
   });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
+  res.status(500).json({
+    success: false,
     message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'production' ? {} : err.stack
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
-// Socket.io for real-time hazard updates
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-  
-  socket.on('join-area', (coordinates) => {
-    socket.join(`area-${coordinates.lat}-${coordinates.lng}`);
-  });
-  
-  socket.on('report-hazard', (hazardData) => {
-    // Broadcast to users in the same area
-    socket.broadcast.to(`area-${hazardData.lat}-${hazardData.lng}`).emit('new-hazard', hazardData);
-  });
-  
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
   });
 });
 
-// Start server
-const startServer = async () => {
-  await connectDB();
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
-};
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`API Documentation: http://localhost:${PORT}/`);
+});
 
-startServer();
-
-module.exports = { app, io };
+module.exports = app;
