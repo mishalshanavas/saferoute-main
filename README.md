@@ -5,8 +5,9 @@ A comprehensive **MERN (MongoDB, Express.js, React, Node.js) + Java** applicatio
 ## 🚀 Features
 
 ### Core Functionality
-- **Interactive Map**: Powered by Leaflet.js and OpenStreetMap (no API key required)
-- **Advanced Routing**: Java-powered algorithms for fastest, safest, and balanced routes
+- **Interactive Map**: Powered by Mapbox GL JS with advanced vector tiles and smooth animations
+- **Smart Place Search**: Geocoding-powered location search with dropdown suggestions using OpenStreetMap Nominatim
+- **Advanced Routing**: Real-time routing using OpenRouteService API for accurate directions
 - **Real-time Hazard Detection**: Live hazard reporting and route recalculation
 - **Safety Scoring**: AI-enhanced safety analysis using multiple data sources
 - **User Authentication**: Secure JWT-based login with user preferences
@@ -26,7 +27,8 @@ A comprehensive **MERN (MongoDB, Express.js, React, Node.js) + Java** applicatio
 - **React 18**: Modern functional components with hooks
 - **Redux Toolkit**: State management for complex application state
 - **React Router**: Client-side routing and navigation
-- **Leaflet.js**: Interactive mapping with OpenStreetMap
+- **Mapbox GL JS**: Advanced vector mapping with smooth animations
+- **Place Search**: Intelligent geocoding with OpenStreetMap Nominatim API
 - **Tailwind CSS**: Utility-first styling framework
 - **Socket.io Client**: Real-time communication
 
