@@ -74,9 +74,36 @@ const PlaceSearchInput = ({
   const updateDropdownPosition = () => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
+      const viewport = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+      
+      let top = rect.bottom + 8;
+      let left = rect.left;
+      
+      // Ensure dropdown doesn't go off-screen horizontally
+      if (left + rect.width > viewport.width) {
+        left = viewport.width - rect.width - 16; // 16px padding from edge
+      }
+      if (left < 16) {
+        left = 16; // 16px padding from left edge
+      }
+      
+      // Ensure dropdown doesn't go off-screen vertically
+      const maxDropdownHeight = 240; // max-h-60 in pixels
+      if (top + maxDropdownHeight > viewport.height) {
+        // Show above input if no room below
+        top = rect.top - maxDropdownHeight - 8;
+        if (top < 16) {
+          // If no room above either, position at top with scroll
+          top = 16;
+        }
+      }
+      
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.left + window.scrollX,
+        top: top,
+        left: left,
         width: rect.width
       });
     }
