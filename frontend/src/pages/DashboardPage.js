@@ -28,6 +28,14 @@ const DashboardPage = () => {
     console.log('Button should be enabled:', !!(startCoords && endCoords));
   }, [startCoords, endCoords]);
 
+  // Auto-recalculate route when route type changes (if coordinates exist)
+  useEffect(() => {
+    if (startCoords && endCoords && (startLocation || endLocation)) {
+      console.log(`Route type changed to ${routeType}, recalculating...`);
+      calculateRoute();
+    }
+  }, [routeType]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const navItems = [
     {
       label: "Routes", 
@@ -170,57 +178,71 @@ const DashboardPage = () => {
     console.log('Starting route calculation with coords:', { finalStartCoords, finalEndCoords });
     
     try {
-      // Use OpenRouteService for routing (free alternative to Google)
-      const profile = routeType === 'fastest' ? 'driving-car' : 'foot-walking';
-      const response = await fetch(
-        `https://api.openrouteservice.org/v2/directions/${profile}?` +
-        `api_key=5b3ce3597851110001cf6248d287262e8531419b9c38babc40038b43&` +
-        `start=${finalStartCoords[1]},${finalStartCoords[0]}&` +
-        `end=${finalEndCoords[1]},${finalEndCoords[0]}`
-      );
+      let routes = [];
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('API Response:', data);
+      if (routeType === 'fastest') {
+        // Get the fastest route using driving-car profile
+        console.log('Calculating fastest route...');
+        const response = await fetch(
+          `https://api.openrouteservice.org/v2/directions/driving-car?` +
+          `api_key=5b3ce3597851110001cf6248d287262e8531419b9c38babc40038b43&` +
+          `start=${finalStartCoords[1]},${finalStartCoords[0]}&` +
+          `end=${finalEndCoords[1]},${finalEndCoords[0]}&` +
+          `preference=fastest`
+        );
         
-        if (data.features && data.features.length > 0) {
-          const route = data.features[0];
-          const coordinates = route.geometry.coordinates;
-          
-          // Convert coordinates to [lat, lng] format
-          const points = coordinates.map(coord => [coord[1], coord[0]]);
-          setRoutePoints(points);
-          
-          const distance = (route.properties.segments[0].distance / 1000).toFixed(1);
-          const duration = Math.round(route.properties.segments[0].duration / 60);
-          
-          setRouteData({
-            distance: `${distance} km`,
-            duration: `${duration} mins`,
-            safetyScore: routeType === 'safest' ? '95%' : '78%',
-            hazardCount: routeType === 'safest' ? 1 : Math.floor(Math.random() * 5) + 1,
-            routeType: routeType
-          });
-        } else {
-          console.log('No route found in API response');
-          throw new Error('No route found');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.features && data.features.length > 0) {
+            routes.push(data.features[0]);
+          }
         }
       } else {
-        console.log('API request failed:', response.status, response.statusText);
-        // Fallback to simple straight line if routing fails
-        const points = [startCoords, endCoords];
+        // Get alternative routes for safest option
+        console.log('Calculating safest route (getting alternatives)...');
+        const response = await fetch(
+          `https://api.openrouteservice.org/v2/directions/driving-car?` +
+          `api_key=5b3ce3597851110001cf6248d287262e8531419b9c38babc40038b43&` +
+          `start=${finalStartCoords[1]},${finalStartCoords[0]}&` +
+          `end=${finalEndCoords[1]},${finalEndCoords[0]}&` +
+          `alternative_routes=2&` +
+          `preference=recommended`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.features && data.features.length > 0) {
+            // Use the second route if available (alternative), otherwise use first
+            const selectedRoute = data.features.length > 1 ? data.features[1] : data.features[0];
+            routes.push(selectedRoute);
+          }
+        }
+      }
+      
+      if (routes.length > 0) {
+        const route = routes[0];
+        const coordinates = route.geometry.coordinates;
+        
+        // Convert coordinates to [lat, lng] format
+        const points = coordinates.map(coord => [coord[1], coord[0]]);
         setRoutePoints(points);
         
-        // Calculate approximate distance
-        const distance = calculateDistance(startCoords, endCoords);
+        const distance = (route.properties.segments[0].distance / 1000).toFixed(1);
+        const duration = Math.round(route.properties.segments[0].duration / 60);
         
         setRouteData({
-          distance: `${distance.toFixed(1)} km`,
-          duration: `${Math.round(distance * 3)} mins`,
+          distance: `${distance} km`,
+          duration: `${duration} mins`,
           safetyScore: routeType === 'safest' ? '95%' : '78%',
-          hazardCount: routeType === 'safest' ? 1 : 3,
+          hazardCount: routeType === 'safest' ? 1 : Math.floor(Math.random() * 5) + 1,
           routeType: routeType
         });
+        
+        console.log(`${routeType} route calculated successfully`);
+        return; // Exit if successful
+      } else {
+        console.log('No routes found in API response');
+        throw new Error('No routes found');
       }
       
     } catch (error) {
@@ -228,24 +250,42 @@ const DashboardPage = () => {
       
       // Try a different approach with OSRM (Open Source Routing Machine)
       try {
-        const osrmResponse = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${finalStartCoords[1]},${finalStartCoords[0]};${finalEndCoords[1]},${finalEndCoords[0]}?overview=full&geometries=geojson`
-        );
+        console.log(`Fallback: Trying OSRM for ${routeType} route...`);
+        
+        let osrmUrl;
+        if (routeType === 'fastest') {
+          // Use fastest route
+          osrmUrl = `https://router.project-osrm.org/route/v1/driving/${finalStartCoords[1]},${finalStartCoords[0]};${finalEndCoords[1]},${finalEndCoords[0]}?overview=full&geometries=geojson&annotations=true`;
+        } else {
+          // For safest route, try to get alternatives if possible
+          osrmUrl = `https://router.project-osrm.org/route/v1/driving/${finalStartCoords[1]},${finalStartCoords[0]};${finalEndCoords[1]},${finalEndCoords[0]}?overview=full&geometries=geojson&alternatives=2`;
+        }
+        
+        const osrmResponse = await fetch(osrmUrl);
         
         if (osrmResponse.ok) {
           const osrmData = await osrmResponse.json();
           console.log('OSRM Response:', osrmData);
           
           if (osrmData.routes && osrmData.routes.length > 0) {
-            const route = osrmData.routes[0];
-            const coordinates = route.geometry.coordinates;
+            // For safest route, try to use an alternative route if available
+            let selectedRoute;
+            if (routeType === 'safest' && osrmData.routes.length > 1) {
+              // Use the second route (alternative) which might be safer
+              selectedRoute = osrmData.routes[1];
+              console.log('Using alternative route for safety');
+            } else {
+              selectedRoute = osrmData.routes[0];
+            }
+            
+            const coordinates = selectedRoute.geometry.coordinates;
             
             // Convert coordinates to [lat, lng] format
             const points = coordinates.map(coord => [coord[1], coord[0]]);
             setRoutePoints(points);
             
-            const distance = (route.distance / 1000).toFixed(1);
-            const duration = Math.round(route.duration / 60);
+            const distance = (selectedRoute.distance / 1000).toFixed(1);
+            const duration = Math.round(selectedRoute.duration / 60);
             
             setRouteData({
               distance: `${distance} km`,
@@ -490,9 +530,18 @@ const DashboardPage = () => {
                   speed="3s"
                 >
                   <div className="p-6 bg-black/40 backdrop-blur-sm rounded-xl">
-                    <div className="flex items-center gap-3 mb-6">
-                      <MapPin className="w-5 h-5 text-purple-400" />
-                      <h3 className="text-lg font-medium text-white">Route Details</h3>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <MapPin className="w-5 h-5 text-purple-400" />
+                        <h3 className="text-lg font-medium text-white">Route Details</h3>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        routeData.routeType === 'fastest' 
+                          ? 'bg-cyan-500/20 text-cyan-400' 
+                          : 'bg-green-500/20 text-green-400'
+                      }`}>
+                        {routeData.routeType === 'fastest' ? '⚡ Fastest Route' : '🛡️ Safest Route'}
+                      </div>
                     </div>
                     
                     <div className="space-y-4">
