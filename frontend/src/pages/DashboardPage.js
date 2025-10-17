@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
-import { Search, Navigation, Shield, Clock, AlertTriangle } from 'lucide-react';
+import { Search, Navigation, Shield, Clock, AlertTriangle, MapPin, Zap } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import LiquidEther from '../components/LiquidEther';
+import StarBorder from '../components/StarBorder';
+import CardNav from '../components/CardNav';
+import logo from '../components/logo.svg';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -22,6 +27,39 @@ const DashboardPage = () => {
   const [startCoords, setStartCoords] = useState(null);
   const [endCoords, setEndCoords] = useState(null);
   const [routePoints, setRoutePoints] = useState([]);
+  const containerRef = useRef(null);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  const navItems = [
+    {
+      label: "Routes", 
+      bgColor: "#0D0716",
+      textColor: "#fff",
+      links: [
+        { label: "Dashboard", ariaLabel: "Route Dashboard", href: "/dashboard" },
+        { label: "History", ariaLabel: "Route History", href: "/route-history" },
+        { label: "Saved", ariaLabel: "Saved Routes", href: "/saved-routes" }
+      ]
+    },
+    {
+      label: "Safety",
+      bgColor: "#170D27", 
+      textColor: "#fff",
+      links: [
+        { label: "Hazards", ariaLabel: "View Hazards" },
+        { label: "Reports", ariaLabel: "Safety Reports" }
+      ]
+    },
+    {
+      label: "Profile",
+      bgColor: "#271E37",
+      textColor: "#fff",
+      links: [
+        { label: "Settings", ariaLabel: "Profile Settings", href: "/profile" },
+        { label: "Support", ariaLabel: "Contact Support" }
+      ]
+    }
+  ];
 
   // Mock geocoding function (replace with real API)
   const geocodeAddress = async (address) => {
@@ -92,200 +130,304 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Route Planner</h1>
-          <p className="text-gray-600 text-sm">Plan your journey with safety and efficiency in mind</p>
-        </div>
+    <div className="bg-black text-white overflow-hidden relative min-h-screen">
+      {/* Splash Cursor Effect */}
+      <SplashCursor />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Route Planning Panel */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Plan Your Route</h2>
-              
-              {/* Location Inputs */}
-              <div className="space-y-3">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Starting location"
-                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
-                    value={startLocation}
-                    onChange={(e) => setStartLocation(e.target.value)}
-                  />
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                </div>
+      {/* Background Animation */}
+      <div className="fixed inset-0 z-0">
+        <LiquidEther
+          colors={['#5227FF', '#FF9FFC', '#B19EEF']}
+          mouseForce={20}
+          cursorSize={100}
+          isViscous={false}
+          viscous={30}
+          iterationsViscous={32}
+          iterationsPoisson={32}
+          resolution={0.5}
+          isBounce={false}
+          autoDemo={true}
+          autoSpeed={0.5}
+          autoIntensity={2.2}
+          takeoverDuration={0.25}
+          autoResumeDelay={3000}
+          autoRampDuration={0.6}
+        />
+      </div>
 
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleSwapLocations}
-                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <Navigation className="w-4 h-4 transform rotate-90" />
-                  </button>
-                </div>
+      {/* Navigation */}
+      <CardNav
+        logo={logo}
+        logoAlt="SafeRoute Logo"
+        items={navItems}
+        className="relative z-20"
+      />
 
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Destination"
-                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
-                    value={endLocation}
-                    onChange={(e) => setEndLocation(e.target.value)}
-                  />
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                </div>
-              </div>
-
-              {/* Route Type Selection */}
-              <div className="mt-6">
-                <label className="text-sm font-medium text-gray-700 mb-3 block">Route Preference</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setRouteType('fastest')}
-                    className={`flex items-center justify-center p-3 rounded-md text-sm font-medium transition-colors ${
-                      routeType === 'fastest'
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Clock className="w-4 h-4 mr-2" />
-                    Fastest
-                  </button>
-                  <button
-                    onClick={() => setRouteType('safest')}
-                    className={`flex items-center justify-center p-3 rounded-md text-sm font-medium transition-colors ${
-                      routeType === 'safest'
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Safest
-                  </button>
-                </div>
-              </div>
-
-              {/* Calculate Route Button */}
-              <button
-                onClick={calculateRoute}
-                disabled={!startLocation || !endLocation || isLoading}
-                className="w-full mt-6 bg-gray-900 text-white py-3 px-4 rounded-md font-medium hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? 'Calculating...' : 'Calculate Route'}
-              </button>
-            </div>
-
-            {/* Route Information */}
-            {routeData && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Route Details</h3>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Distance</span>
-                    <span className="text-sm font-medium">{routeData.distance}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Duration</span>
-                    <span className="text-sm font-medium">{routeData.duration}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Safety Score</span>
-                    <span className={`text-sm font-medium ${
-                      parseInt(routeData.safetyScore) > 85 ? 'text-green-600' : 'text-yellow-600'
-                    }`}>
-                      {routeData.safetyScore}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Hazards</span>
-                    <span className="flex items-center text-sm font-medium">
-                      <AlertTriangle className="w-3 h-3 mr-1 text-orange-500" />
-                      {routeData.hazardCount}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4 p-3 bg-gray-50 rounded-md">
-                  <p className="text-xs text-gray-600">
-                    {routeType === 'fastest' 
-                      ? 'Optimized for shortest travel time with moderate safety considerations.'
-                      : 'Prioritizes safety over speed, avoiding high-risk areas and known hazards.'
-                    }
-                  </p>
-                </div>
-              </div>
-            )}
+      {/* Main Dashboard Content */}
+      <div className="relative z-10 min-h-screen pt-20" ref={containerRef}>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-12 text-center">
+            <h1 className="text-4xl md:text-6xl font-light mb-4">
+              <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Route Planner
+              </span>
+            </h1>
+            <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+              Plan your journey with advanced safety analytics and real-time hazard detection
+            </p>
           </div>
 
-          {/* Map Preview */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="h-96 lg:h-[600px] relative">
-                <MapContainer 
-                  center={mapCenter} 
-                  zoom={12} 
-                  className="h-full w-full"
-                  zoomControl={false}
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  />
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            {/* Route Planning Panel */}
+            <div className="xl:col-span-1 space-y-6">
+              <StarBorder
+                className="w-full"
+                color="#00FFFF"
+                speed="4s"
+              >
+                <div className="p-6 space-y-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Navigation className="w-6 h-6 text-cyan-400" />
+                    <h2 className="text-xl font-light text-white">Plan Your Route</h2>
+                  </div>
                   
-                  {/* Start Location Marker */}
-                  {startCoords && (
-                    <Marker position={startCoords}>
-                      <Popup>
-                        <div className="text-sm">
-                          <strong>Start:</strong> {startLocation}
+                  {/* Location Inputs */}
+                  <div className="space-y-4">
+                    <StarBorder
+                      as="div"
+                      className="w-full"
+                      color="#00FF88"
+                      speed="3s"
+                    >
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <div className="w-3 h-3 bg-gradient-to-r from-green-400 to-cyan-400 rounded-full shadow-lg"></div>
                         </div>
-                      </Popup>
-                    </Marker>
-                  )}
-                  
-                  {/* End Location Marker */}
-                  {endCoords && (
-                    <Marker position={endCoords}>
-                      <Popup>
-                        <div className="text-sm">
-                          <strong>Destination:</strong> {endLocation}
+                        <input
+                          type="text"
+                          placeholder="Starting location"
+                          className="w-full pl-12 pr-12 py-4 bg-black/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300"
+                          value={startLocation}
+                          onChange={(e) => setStartLocation(e.target.value)}
+                        />
+                        <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      </div>
+                    </StarBorder>
+
+                    <div className="flex justify-center">
+                      <StarBorder
+                        as="button"
+                        className="p-3"
+                        color="#FF6B9D"
+                        speed="2s"
+                        onClick={handleSwapLocations}
+                      >
+                        <Navigation className="w-5 h-5 text-cyan-400 transform rotate-90 transition-transform hover:rotate-180 duration-300" />
+                      </StarBorder>
+                    </div>
+
+                    <StarBorder
+                      as="div"
+                      className="w-full"
+                      color="#FF6B9D"
+                      speed="3s"
+                    >
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-red-400 rounded-full shadow-lg"></div>
                         </div>
-                      </Popup>
-                    </Marker>
-                  )}
-                  
-                  {/* Route Line */}
-                  {routePoints.length > 0 && (
-                    <Polyline 
-                      positions={routePoints} 
-                      color={routeType === 'safest' ? '#10B981' : '#3B82F6'}
-                      weight={4}
-                      opacity={0.8}
-                    />
-                  )}
-                </MapContainer>
-                
-                {/* Map Controls */}
-                <div className="absolute top-4 right-4 z-[1000] bg-white rounded-md shadow-md">
-                  <button className="p-2 text-gray-600 hover:text-gray-900">
-                    <Navigation className="w-5 h-5" />
-                  </button>
+                        <input
+                          type="text"
+                          placeholder="Destination"
+                          className="w-full pl-12 pr-12 py-4 bg-black/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-pink-400 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300"
+                          value={endLocation}
+                          onChange={(e) => setEndLocation(e.target.value)}
+                        />
+                        <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      </div>
+                    </StarBorder>
+                  </div>
+
+                  {/* Route Type Selection */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-300 mb-4 block flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      Route Preference
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <StarBorder
+                        as="button"
+                        className={`transition-all duration-300 ${routeType === 'fastest' ? 'scale-105' : ''}`}
+                        color={routeType === 'fastest' ? '#00FFFF' : '#666'}
+                        speed="2s"
+                        onClick={() => setRouteType('fastest')}
+                      >
+                        <div className="flex items-center justify-center p-3">
+                          <Clock className="w-4 h-4 mr-2" />
+                          <span className="text-sm font-medium">Fastest</span>
+                        </div>
+                      </StarBorder>
+                      
+                      <StarBorder
+                        as="button"
+                        className={`transition-all duration-300 ${routeType === 'safest' ? 'scale-105' : ''}`}
+                        color={routeType === 'safest' ? '#00FF88' : '#666'}
+                        speed="2s"
+                        onClick={() => setRouteType('safest')}
+                      >
+                        <div className="flex items-center justify-center p-3">
+                          <Shield className="w-4 h-4 mr-2" />
+                          <span className="text-sm font-medium">Safest</span>
+                        </div>
+                      </StarBorder>
+                    </div>
+                  </div>
+
+                  {/* Calculate Route Button */}
+                  <StarBorder
+                    as="button"
+                    className="w-full mt-6"
+                    color="#FF6B9D"
+                    speed="1.5s"
+                    onClick={calculateRoute}
+                    disabled={!startLocation || !endLocation || isLoading}
+                  >
+                    <div className="py-4 px-6 text-lg font-medium">
+                      {isLoading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                          Calculating...
+                        </span>
+                      ) : (
+                        'Calculate Route'
+                      )}
+                    </div>
+                  </StarBorder>
                 </div>
-              </div>
+              </StarBorder>
+
+              {/* Route Information */}
+              {routeData && (
+                <StarBorder
+                  className="w-full"
+                  color="#B19EEF"
+                  speed="3s"
+                >
+                  <div className="p-6">
+                    <h3 className="text-xl font-light text-white mb-6 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-purple-400" />
+                      Route Analytics
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-black/30 rounded-lg backdrop-blur-sm">
+                        <span className="text-gray-300">Distance</span>
+                        <span className="text-cyan-400 font-medium">{routeData.distance}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-3 bg-black/30 rounded-lg backdrop-blur-sm">
+                        <span className="text-gray-300">Duration</span>
+                        <span className="text-cyan-400 font-medium">{routeData.duration}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-3 bg-black/30 rounded-lg backdrop-blur-sm">
+                        <span className="text-gray-300">Safety Score</span>
+                        <span className={`font-medium ${
+                          parseInt(routeData.safetyScore) > 85 ? 'text-green-400' : 'text-yellow-400'
+                        }`}>
+                          {routeData.safetyScore}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-3 bg-black/30 rounded-lg backdrop-blur-sm">
+                        <span className="text-gray-300">Hazards</span>
+                        <span className="flex items-center text-orange-400 font-medium">
+                          <AlertTriangle className="w-4 h-4 mr-1" />
+                          {routeData.hazardCount}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-lg backdrop-blur-sm border border-purple-500/20">
+                      <p className="text-sm text-gray-300 leading-relaxed">
+                        {routeType === 'fastest' 
+                          ? 'Optimized for shortest travel time with moderate safety considerations and real-time traffic analysis.'
+                          : 'Prioritizes maximum safety with AI-powered hazard detection, avoiding high-risk areas and known danger zones.'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </StarBorder>
+              )}
+            </div>
+
+            {/* Map Preview */}
+            <div className="xl:col-span-2">
+              <StarBorder
+                className="w-full h-full"
+                color="#5227FF"
+                speed="4s"
+              >
+                <div className="relative h-[500px] xl:h-[700px] overflow-hidden rounded-xl">
+                  <MapContainer 
+                    center={mapCenter} 
+                    zoom={12} 
+                    className="h-full w-full rounded-xl"
+                    zoomControl={false}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    
+                    {/* Start Location Marker */}
+                    {startCoords && (
+                      <Marker position={startCoords}>
+                        <Popup>
+                          <div className="text-sm text-gray-900">
+                            <strong>Start:</strong> {startLocation}
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )}
+                    
+                    {/* End Location Marker */}
+                    {endCoords && (
+                      <Marker position={endCoords}>
+                        <Popup>
+                          <div className="text-sm text-gray-900">
+                            <strong>Destination:</strong> {endLocation}
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )}
+                    
+                    {/* Route Line */}
+                    {routePoints.length > 0 && (
+                      <Polyline 
+                        positions={routePoints} 
+                        color={routeType === 'safest' ? '#10B981' : '#00FFFF'}
+                        weight={4}
+                        opacity={0.9}
+                      />
+                    )}
+                  </MapContainer>
+                  
+                  {/* Map Controls */}
+                  <div className="absolute top-4 right-4 z-[1000]">
+                    <StarBorder
+                      as="button"
+                      color="#00FFFF"
+                      speed="2s"
+                    >
+                      <div className="p-2">
+                        <Navigation className="w-5 h-5 text-cyan-400" />
+                      </div>
+                    </StarBorder>
+                  </div>
+                </div>
+              </StarBorder>
             </div>
           </div>
         </div>
