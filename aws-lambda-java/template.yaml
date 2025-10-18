@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SafeRoute Java AWS Lambda + API Gateway
+
+Parameters:
+  MongoDbUri:
+    Type: String
+    Description: MongoDB connection string
+  MongoDbName:
+    Type: String
+    Default: saferoute
+  MongoCollection:
+    Type: String
+    Default: contributions
+
+Globals:
+  Function:
+    Runtime: java17
+    MemorySize: 1024
+    Timeout: 15
+    Environment:
+      Variables:
+        MONGODB_URI: !Ref MongoDbUri
+        MONGODB_DB: !Ref MongoDbName
+        MONGODB_COLLECTION: !Ref MongoCollection
+
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "GET,POST,OPTIONS"
+        AllowHeaders: "*"
+        AllowOrigin: "*"
+
+  CreateContribution:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.saferoute.handlers.CreateContributionHandler::handleRequest
+      CodeUri: target/aws-lambda-java-1.0.0-shaded.jar
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /contributions
+            Method: post
+            RestApiId: !Ref Api
+
+  GetAllContributions:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.saferoute.handlers.GetAllContributionsHandler::handleRequest
+      CodeUri: target/aws-lambda-java-1.0.0-shaded.jar
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /contributions
+            Method: get
+            RestApiId: !Ref Api
+
+  GetNearbyContributions:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.saferoute.handlers.GetNearbyContributionsHandler::handleRequest
+      CodeUri: target/aws-lambda-java-1.0.0-shaded.jar
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /contributions/nearby
+            Method: get
+            RestApiId: !Ref Api
+
+Outputs:
+  ApiUrl:
+    Description: API endpoint URL
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod"
