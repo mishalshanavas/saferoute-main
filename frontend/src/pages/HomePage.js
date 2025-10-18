@@ -48,9 +48,10 @@ const HomePage = () => {
         <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-6xl sm:text-7xl md:text-8xl font-light text-white mb-6 leading-none">
-              SafeRoute
+              ISRNS
             </h1>
             <p className="text-lg sm:text-xl text-white/70 mb-10 font-light">
+              Intelligent Safe Route Navigation System <br/>
               Navigate safely. Arrive securely.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
